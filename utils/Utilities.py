@@ -126,11 +126,13 @@ def getPhotosFrom(path):
 
 # test()
 
-def write_file(str_array):
-    temp_path = "logs/file.txt" 
-    #Set new_text to whatever you want based on your logic
-    buf = "\n".join(str_array)    
-    f=open(temp_path,'w')
+def write_file(filename, str_array):
+#     temp_path = "logs/file.txt"
+    buf = ""
+    for photo in str_array:
+        buf += photo.path + "\n"
+        
+    f = open("/home/daniel/workspace/Project/logs/{0}".format(filename),'w')
     f.write(buf)
     f.close();
     

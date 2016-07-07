@@ -11,17 +11,23 @@ import utils
 import time
 
 start_time = time.time()
-haarcascades_path = '/home/daniel/opencv/data/haarcascades/'
-# FACES_PATH = '/home/daniel/Downloads/Images/lfw-deepfunneled/'
-FACES_PATH = '/home/daniel/Downloads/Images/lfw/'
-people = 1000
-pic_per_person = -1
-print_photos = False
 
-# Face Detection Variables 
-scale_factor = 1.1
+# Directory paths
+haarcascades_path = '/home/daniel/opencv/data/haarcascades/'
+FACES_PATH = '/home/daniel/Downloads/Images/lfw-deepfunneled/'
+# FACES_PATH = '/home/daniel/Downloads/Images/lfw/'
+
+# Number of photos configuration
+people = 1000
+pic_per_person = -1 # -set to -1 to bring all photos from a person
+
+# Face Detection coniguration
+scale_factor = 1.11
 num_neighbors = 3
 
+# other configurations
+print_photos = True
+write_log = True
 
 face_cascade = cv2.CascadeClassifier(haarcascades_path + 'haarcascade_frontalface_alt2.xml')
 eye_cascade = cv2.CascadeClassifier(haarcascades_path + 'haarcascade_eye_tree_eyeglasses.xml')
@@ -124,12 +130,17 @@ def detect(filename=None, folder=None, num_of_people=people, num_of_pics=pic_per
             cv2.waitKey(0)
     cv2.destroyAllWindows()
 #     print(type(["hola"]), type("hola"))
+    
+    if write_log:
+        uti.write_file("photos_with_no_faces.txt", photosWithNoFaces)
+
     print("Total Photos " + str(totalPhotos))
     print("Photos with no faces: {0}".format((len(photosWithNoFaces))))
     print("Photos with more than one face : {0}".format(len(photosWithMoreThanOneFace)))
+    
     total_time = time.time() - start_time
     print("----- %s seconds ----" %total_time)
 
-# detect(folder="Amanda_Bynes")
-
-detect()
+# detect(folder="George_W_Bush")
+detect(filename='George_W_Bush_0011.jpg')
+# detect()
