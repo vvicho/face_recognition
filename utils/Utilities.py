@@ -6,6 +6,7 @@ Created on Jun 29, 2016
 import os
 import random
 from random import shuffle
+from utils import Photo as photo_obj
 
 def getSubdirectories(direc):
     '''
@@ -81,9 +82,16 @@ def getRandomImages(direc, numOfPeople, picPerPerson):
 
     photos = []
     for person in listOfPeople:
+        for f in getRandomFile(person, picPerPerson):
+            person_name = person.split('/')
+            photo = photo_obj.Photo(person + f, person_name[len(person_name)-1], f )
+#             photo.path = person + f
+#             photo.album_name = person_name[len(person_name)-1]
+#             photo.photo_name = f
+            photos += [photo]
+#         photos += [person + f for f in getRandomFile(person, picPerPerson)] 
+#         photo = photo_obj()
         
-        photos += [person + f for f in getRandomFile(person, picPerPerson)] 
-    
     return photos
 
 def test():
@@ -106,4 +114,4 @@ def getAllPhotos(direc):
 # def getPhoto(photos):
 #     
 
-test()
+# test()

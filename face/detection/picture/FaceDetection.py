@@ -7,6 +7,7 @@ Created on Jun 23, 2016
 import cv2
 import numpy as np
 import utils.Utilities as uti
+import utils
 import time
 
 start_time = time.time()
@@ -17,8 +18,9 @@ pic_per_person = -1
 
 
 face_cascade = cv2.CascadeClassifier(haarcascades_path + 'haarcascade_frontalface_alt2.xml')
-right_eye_cascade = cv2.CascadeClassifier(haarcascades_path + 'haarcascade_eye.xml')
-left_eye_cascade =  cv2.CascadeClassifier(haarcascades_path + 'haarcascade_eye.xml')
+eye_cascade = cv2.CascadeClassifier(haarcascades_path + 'haarcascade_eye_tree_eyeglasses.xml')
+right_eye_cascade = cv2.CascadeClassifier(haarcascades_path + 'haarcascade_lefteye_2splits.xml')
+left_eye_cascade =  cv2.CascadeClassifier(haarcascades_path + 'haarcascade_righteye_2splits.xml')
 
 
 
@@ -32,12 +34,12 @@ photosWithMoreThanOneFace = []
 photosWithMoreThan2Eyes = []
 index=1
 
-for person in imgs:
+for photo in imgs:
     if index % 50 == 0:
         print(index)
 
     index +=1
-    img = cv2.imread(person)
+    img = cv2.imread(photo.path)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     
     
@@ -78,21 +80,33 @@ for person in imgs:
     '''
 #     print(faces)
     if(len(faces) ==0):
-        photosWithNoFaces += [person]
+        photosWithNoFaces += [photo]
     elif(len(faces)>1):
-        photosWithMoreThanOneFace += [person]
-    
-#     for(x,y,w,h) in faces:
-#         cv2.rectangle(img, (x,y), (x+w, y+h), (255,0,0),2)
-#         roi_gray = gray[y:y+h, x:x+w]
-#         roi_color = img[y:y+h, x:x+w]
-#         eyes = eye_cascade.detectMultiScale(roi_gray)
-#         for(ex, ey, ew, eh) in eyes:
-#             cv2.rectangle(roi_color, (ex, ey), (ex+ew, ey+eh), (0,255,0),2)
-#     print("finished")    
-#     cv2.imshow(person, img)
-#     cv2.waitKey(0)
-# cv2.destroyAllWindows()
+        photosWithMoreThanOneFace += [photo]
+
+    print(photo.photo_name)
+    for(x,y,w,h) in faces:
+        
+        cv2.rectangle(img, (x,y), (x+w, y+h), (255,0,0),2)
+        roi_gray = gray[y:y+h, x:x+w]
+        roi_color = img[y:y+h, x:x+w]
+        left_eyes = left_eye_cascade.detectMultiScale(roi_gray)
+        right_eyes = right_eye_cascade.detectMultiScale(roi_gray)
+        eyes = eye_cascade.detectMultiScale(roi_gray)
+        for(ex, ey, ew, eh) in eyes:
+            cv2.rectangle(roi_color, (ex, ey), (ex+ew, ey+eh), (0,255,255),2)
+        for(ex, ey, ew, eh) in left_eyes:
+            cv2.rectangle(roi_color, (ex, ey), (ex+ew, ey+eh), (0,255,0),2)
+        for(ex, ey, ew, eh) in right_eyes:
+            cv2.rectangle(roi_color, (ex, ey), (ex+ew, ey+eh), (0,0,255),2)
+        print("Eyes : {0}".format(len(eyes)))
+        print("Left eyes : {0}".format(len(left_eyes)))
+        print("Right eyes : {0}".format(len(right_eyes)))
+#     print("finished")  
+      
+    cv2.imshow(photo.photo_name, img)
+    cv2.waitKey(0)
+cv2.destroyAllWindows()
 print(type(["hola"]), type("hola"))
 print("Total Photos " + str(totalPhotos))
 print("Photos with no faces: {0}".format((len(photosWithNoFaces))))
