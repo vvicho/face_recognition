@@ -77,14 +77,15 @@ def getRandomImages(direc, numOfPeople, picPerPerson):
     Gets images from 
     '''
 #     print(numOfPeople, picPerPerson)
-    
+#     print(direc)
     listOfPeople = getTrimmedList(getSubdirectories(direc), numOfPeople )
 
     photos = []
     for person in listOfPeople:
         for f in getRandomFile(person, picPerPerson):
-            person_name = person.split('/')
-            photo = photo_obj.Photo(person + f, person_name[len(person_name)-1], f )
+            photo = createPhoto_obj(person, f)
+#             person_name = person.split('/')
+#             photo = photo_obj.Photo(person + f, person_name[len(person_name)-1], f )
 #             photo.path = person + f
 #             photo.album_name = person_name[len(person_name)-1]
 #             photo.photo_name = f
@@ -103,15 +104,36 @@ def test():
 #     print(len(listA))
     photos = getRandomImages(FACES_PATH, 2, 4)
 #     photos = getAllPhotos(FACES_PATH)
-    print(photos)
+#     print(photos)
 #     print(len(photos))
     
+
+def createPhoto_obj(folder, name):
+    trimmedPath = folder.split()
+    return photo_obj.Photo(folder + name, trimmedPath[len(trimmedPath)-1], name)
 
 def getAllPhotos(direc):
     return getRandomImages(direc, -1, -1)
     
 
-# def getPhoto(photos):
-#     
+
+
+def getPhotosFrom(path):
+    for _, _, filenames in os.walk(path):
+        filenames.sort()
+        return [createPhoto_obj(path, f) for f in filenames]
+     
 
 # test()
+
+def write_file(str_array):
+    temp_path = "logs/file.txt" 
+    #Set new_text to whatever you want based on your logic
+    buf = "\n".join(str_array)    
+    f=open(temp_path,'w')
+    f.write(buf)
+    f.close();
+    
+    
+
+    
