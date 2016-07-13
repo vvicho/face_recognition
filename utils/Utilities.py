@@ -7,6 +7,7 @@ import os
 import random
 from random import shuffle
 from utils import Photo as photo_obj
+import cv2
 
 def getSubdirectories(direc):
     '''
@@ -84,11 +85,6 @@ def getRandomImages(direc, numOfPeople, picPerPerson):
     for person in listOfPeople:
         for f in getRandomFile(person, picPerPerson):
             photo = createPhoto_obj(person, f)
-#             person_name = person.split('/')
-#             photo = photo_obj.Photo(person + f, person_name[len(person_name)-1], f )
-#             photo.path = person + f
-#             photo.album_name = person_name[len(person_name)-1]
-#             photo.photo_name = f
             photos += [photo]
 #         photos += [person + f for f in getRandomFile(person, picPerPerson)] 
 #         photo = photo_obj()
@@ -137,5 +133,13 @@ def write_file(filename, str_array):
     f.close();
     
     
-
-    
+# Photo Utils
+def resize_img(img, longest_side=500):
+    height, width = img.shape[:2]
+    factor = 0
+    if height > width:
+        factor = (500*100/height)/100
+    else:
+        factor = (500*100/width)/100
+    res = cv2.resize(img,None,fx=factor, fy=factor, interpolation = cv2.INTER_CUBIC)
+    return res

@@ -15,10 +15,11 @@ start_time = time.time()
 # Directory paths
 haarcascades_path = '/home/daniel/opencv/data/haarcascades/'
 FACES_PATH = '/home/daniel/Downloads/Images/lfw-deepfunneled/'
+# FACES_PATH = '/home/daniel/Downloads/Images/Daniel/'
 # FACES_PATH = '/home/daniel/Downloads/Images/lfw/'
 
 # Number of photos configuration
-people = 1000
+people = 10
 pic_per_person = -1 # -set to -1 to bring all photos from a person
 
 # Face Detection coniguration
@@ -61,7 +62,10 @@ def detect(filename=None, folder=None, num_of_people=people, num_of_pics=pic_per
     
         index +=1
         img = cv2.imread(photo.path)
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        res = uti.resize_img(img, 500)
+        
+        gray = cv2.cvtColor(res, cv2.COLOR_BGR2GRAY)
+        
         
         
         
@@ -109,9 +113,9 @@ def detect(filename=None, folder=None, num_of_people=people, num_of_pics=pic_per
         if print_photos:
             for(x,y,w,h) in faces:
                 
-                cv2.rectangle(img, (x,y), (x+w, y+h), (255,0,0),2)
+                cv2.rectangle(res, (x,y), (x+w, y+h), (255,0,0),2)
                 roi_gray = gray[y:y+h, x:x+w]
-                roi_color = img[y:y+h, x:x+w]
+                roi_color = res[y:y+h, x:x+w]
                 left_eyes = left_eye_cascade.detectMultiScale(roi_gray)
                 right_eyes = right_eye_cascade.detectMultiScale(roi_gray)
                 eyes = eye_cascade.detectMultiScale(roi_gray)
@@ -126,7 +130,7 @@ def detect(filename=None, folder=None, num_of_people=people, num_of_pics=pic_per
                 print("Right eyes : {0}".format(len(right_eyes)))
         #     print("finished")  
               
-            cv2.imshow(photo.photo_name, img)
+            cv2.imshow(photo.photo_name, res)
             cv2.waitKey(0)
     cv2.destroyAllWindows()
 #     print(type(["hola"]), type("hola"))
@@ -142,5 +146,5 @@ def detect(filename=None, folder=None, num_of_people=people, num_of_pics=pic_per
     print("----- %s seconds ----" %total_time)
 
 # detect(folder="George_W_Bush")
-detect(filename='George_W_Bush_0011.jpg')
-# detect()
+# detect(filename='George_W_Bush_0011.jpg')
+detect()
