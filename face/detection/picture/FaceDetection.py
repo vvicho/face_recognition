@@ -14,12 +14,12 @@ start_time = time.time()
 
 # Directory paths
 haarcascades_path = '/home/daniel/opencv/data/haarcascades/'
-FACE_LIBRARY = 2
+FACE_LIBRARY = 3
 FACE_LIBRARIES = [
       '/home/daniel/Downloads/Images/lfw/',                 # 0
       '/home/daniel/Downloads/Images/lfw-deepfunneled/',    # 1
       '/home/daniel/Downloads/Images/Daniel/',              # 2 My personal photos             
-      '/home/daniel/workspace/Project/Images/yalefaces/jpeg/subject07'    # 3 Yale Face Library
+      '/home/daniel/workspace/Project/Images/yalefaces/jpeg/subject04'    # 3 Yale Face Library
                  ]
 
 FACE_DIRECTORY = FACE_LIBRARIES[FACE_LIBRARY]
@@ -35,7 +35,7 @@ num_neighbors = 3
 # other configurations
 print_photos = True
 write_log = True
-resize = True
+resize = FACE_LIBRARY == 2
 
 face_cascade = cv2.CascadeClassifier(haarcascades_path + 'haarcascade_frontalface_alt2.xml')
 eyeglasses_cascade = cv2.CascadeClassifier(haarcascades_path + 'haarcascade_eye_tree_eyeglasses.xml')
@@ -70,6 +70,7 @@ def getImages(filename=None, folder=None, num_of_people=people, num_of_pics=pic_
 def detect(filename=None, folder=None, num_of_people=people, num_of_pics=pic_per_person):
     
     imgs = getImages(filename, folder, num_of_people, num_of_pics)
+    
     # print(imgs)
     totalPhotos=len(imgs)
     photosWithNoFaces = []

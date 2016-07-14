@@ -38,7 +38,7 @@ def get_file_name(file_path):
     trimmed_path = file_path.split('/')
     return trimmed_path[len(trimmed_path)-1]
 
-# print((getFiles("/home/daniel/workspace/Project/Images/yalefaces/")))
+print((getFiles("/home/daniel/workspace/Project/Images/yalefaces/jpeg/")))
 
 def getSubdirectories(direc):
     '''
