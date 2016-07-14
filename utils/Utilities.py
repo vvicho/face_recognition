@@ -8,6 +8,37 @@ import random
 from random import shuffle
 from utils import Photo as photo_obj
 import cv2
+import glob
+
+def getFiles(direc, max_photos=-1):
+    out = []
+    filenames = glob.glob(direc + '*')
+    for file in filenames:
+        file_name = get_file_name(file)
+        out += [photo_obj.Photo(file, splitPhotoName(file_name)[0], file_name)] 
+#         
+    if max_photos == -1:
+        return out
+    else:
+        shuffle(out)
+    
+    if max_photos > len(out):
+        return out
+    return out[:max_photos]
+
+def splitPhotoName(photo_name):
+#     print(photo_name)
+    string_array = photo_name.split('.')
+#     print(string_array)
+#     string_array = re.split('(\d+)', string_array[0]) + [string_array[1]]
+#     string_array.remove('')
+    return string_array
+
+def get_file_name(file_path):
+    trimmed_path = file_path.split('/')
+    return trimmed_path[len(trimmed_path)-1]
+
+# print((getFiles("/home/daniel/workspace/Project/Images/yalefaces/")))
 
 def getSubdirectories(direc):
     '''

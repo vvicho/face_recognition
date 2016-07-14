@@ -14,12 +14,18 @@ start_time = time.time()
 
 # Directory paths
 haarcascades_path = '/home/daniel/opencv/data/haarcascades/'
-FACES_PATH = '/home/daniel/Downloads/Images/lfw-deepfunneled/'
-# FACES_PATH = '/home/daniel/Downloads/Images/Daniel/'
-# FACES_PATH = '/home/daniel/Downloads/Images/lfw/'
+FACE_LIBRARY = 2
+FACE_LIBRARIES = [
+      '/home/daniel/Downloads/Images/lfw/',                 # 0
+      '/home/daniel/Downloads/Images/lfw-deepfunneled/',    # 1
+      '/home/daniel/Downloads/Images/Daniel/',              # 2 My personal photos             
+      '/home/daniel/workspace/Project/Images/yalefaces/jpeg/subject07'    # 3 Yale Face Library
+                 ]
+
+FACE_DIRECTORY = FACE_LIBRARIES[FACE_LIBRARY]
 
 # Number of photos configuration
-people = 10
+people = -1
 pic_per_person = -1 # -set to -1 to bring all photos from a person
 
 # Face Detection coniguration
@@ -29,26 +35,41 @@ num_neighbors = 3
 # other configurations
 print_photos = True
 write_log = True
+resize = True
 
 face_cascade = cv2.CascadeClassifier(haarcascades_path + 'haarcascade_frontalface_alt2.xml')
-eye_cascade = cv2.CascadeClassifier(haarcascades_path + 'haarcascade_eye_tree_eyeglasses.xml')
+eyeglasses_cascade = cv2.CascadeClassifier(haarcascades_path + 'haarcascade_eye_tree_eyeglasses.xml')
+eye_cascade = cv2.CascadeClassifier(haarcascades_path + 'haarcascade_eye.xml')
 right_eye_cascade = cv2.CascadeClassifier(haarcascades_path + 'haarcascade_lefteye_2splits.xml')
 left_eye_cascade =  cv2.CascadeClassifier(haarcascades_path + 'haarcascade_righteye_2splits.xml')
+smile_cascade =  cv2.CascadeClassifier(haarcascades_path + 'haarcascade_smile.xml')
+fullbody_cascade = cv2.CascadeClassifier(haarcascades_path + 'haarcascade_fullbody.xml')
+
+def getImages(filename=None, folder=None, num_of_people=people, num_of_pics=pic_per_person):
+    if FACE_LIBRARY == 3:
+        imgs = uti.getFiles(FACE_DIRECTORY, people)
+        print(FACE_DIRECTORY)
+        
+    else:
+    
+        if(filename == None and folder == None):
+                imgs = uti.getRandomImages(FACE_DIRECTORY, people, pic_per_person)
+                # imgs = uti.getAllPhotos(FACES_PATH)
+        else:
+            if(folder==None):
+                print("Get photo: " + filename)
+                person_name = filename.split("_0")
+                imgs = [uti.createPhoto_obj(FACE_DIRECTORY + person_name[0] + "/", filename )]
+            else:
+                print("Get photos from folder " + folder)
+                imgs = uti.getPhotosFrom(FACE_DIRECTORY + folder + "/")
+                
+    return imgs
+
 
 def detect(filename=None, folder=None, num_of_people=people, num_of_pics=pic_per_person):
-    if(filename == None and folder == None):
-        imgs = uti.getRandomImages(FACES_PATH, people, pic_per_person)
-        # imgs = uti.getAllPhotos(FACES_PATH)
-    else:
-        if(folder==None):
-            print("Get photo: " + filename)
-            person_name = filename.split("_0")
-            imgs = [uti.createPhoto_obj(FACES_PATH + person_name[0] + "/", filename )]
-        else:
-            print("Get photos from folder " + folder)
-            imgs = uti.getPhotosFrom(FACES_PATH + folder + "/")
-        
     
+    imgs = getImages(filename, folder, num_of_people, num_of_pics)
     # print(imgs)
     totalPhotos=len(imgs)
     photosWithNoFaces = []
@@ -62,8 +83,10 @@ def detect(filename=None, folder=None, num_of_people=people, num_of_pics=pic_per
     
         index +=1
         img = cv2.imread(photo.path)
-        res = uti.resize_img(img, 500)
-        
+        if resize:
+            res = uti.resize_img(img, 500)
+        else:
+            res = img
         gray = cv2.cvtColor(res, cv2.COLOR_BGR2GRAY)
         
         
@@ -112,19 +135,33 @@ def detect(filename=None, folder=None, num_of_people=people, num_of_pics=pic_per
 #         print(photo.photo_name)
         if print_photos:
             for(x,y,w,h) in faces:
-                
+                #Paint face
                 cv2.rectangle(res, (x,y), (x+w, y+h), (255,0,0),2)
+                
+                #Get all facial data
                 roi_gray = gray[y:y+h, x:x+w]
                 roi_color = res[y:y+h, x:x+w]
                 left_eyes = left_eye_cascade.detectMultiScale(roi_gray)
                 right_eyes = right_eye_cascade.detectMultiScale(roi_gray)
                 eyes = eye_cascade.detectMultiScale(roi_gray)
+                smiles = smile_cascade.detectMultiScale(roi_gray)
+                bodies = fullbody_cascade.detectMultiScale(roi_gray)
+                
+                #Paint both eyes
                 for(ex, ey, ew, eh) in eyes:
                     cv2.rectangle(roi_color, (ex, ey), (ex+ew, ey+eh), (0,255,255),2)
+                #Paint left eyes
                 for(ex, ey, ew, eh) in left_eyes:
                     cv2.rectangle(roi_color, (ex, ey), (ex+ew, ey+eh), (0,255,0),2)
+                #Paint right eyes
                 for(ex, ey, ew, eh) in right_eyes:
                     cv2.rectangle(roi_color, (ex, ey), (ex+ew, ey+eh), (0,0,255),2)
+                #Paint Mouths
+                for(ex, ey, ew, eh) in smiles:
+                    cv2.rectangle(roi_color, (ex, ey), (ex+ew, ey+eh), (255,127,200),2)
+                #Paint bodies
+                for(ex, ey, ew, eh) in bodies:
+                    cv2.rectangle(roi_color, (ex, ey), (ex+ew, ey+eh), (255,127,0),2)
                 print("Eyes : {0}".format(len(eyes)))
                 print("Left eyes : {0}".format(len(left_eyes)))
                 print("Right eyes : {0}".format(len(right_eyes)))
