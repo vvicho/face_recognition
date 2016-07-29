@@ -136,8 +136,8 @@ def test():
     
 
 def createPhoto_obj(folder, name):
-    trimmedPath = folder.split()
-    return photo_obj.Photo(folder + name, trimmedPath[len(trimmedPath)-1], name)
+    trimmedPath = folder.split('/')
+    return photo_obj.Photo(folder + name, trimmedPath[len(trimmedPath)-2], name)
 
 def getAllPhotos(direc):
     return getRandomImages(direc, -1, -1)

@@ -29,7 +29,7 @@ people = -1
 pic_per_person = -1 # -set to -1 to bring all photos from a person
 
 # Face Detection coniguration
-scale_factor = 1.11
+scale_factor = 1.01
 num_neighbors = 3
 
 # other configurations
@@ -127,6 +127,7 @@ def detect(filename=None, folder=None, num_of_people=people, num_of_pics=pic_per
         Photos with more than one face : 558
         ----- 257.44470167160034 seconds ----
         '''
+        
     #     print(faces)
         if(len(faces) ==0):
             photosWithNoFaces += [photo]
@@ -152,17 +153,15 @@ def detect(filename=None, folder=None, num_of_people=people, num_of_pics=pic_per
                 for(ex, ey, ew, eh) in eyes:
                     cv2.rectangle(roi_color, (ex, ey), (ex+ew, ey+eh), (0,255,255),2)
                 #Paint left eyes
-                for(ex, ey, ew, eh) in left_eyes:
-                    cv2.rectangle(roi_color, (ex, ey), (ex+ew, ey+eh), (0,255,0),2)
+#                 for(ex, ey, ew, eh) in left_eyes:
+#                     cv2.rectangle(roi_color, (ex, ey), (ex+ew, ey+eh), (0,255,0),2)
                 #Paint right eyes
-                for(ex, ey, ew, eh) in right_eyes:
-                    cv2.rectangle(roi_color, (ex, ey), (ex+ew, ey+eh), (0,0,255),2)
+#                 for(ex, ey, ew, eh) in right_eyes:
+#                     cv2.rectangle(roi_color, (ex, ey), (ex+ew, ey+eh), (0,0,255),2)
                 #Paint Mouths
-                for(ex, ey, ew, eh) in smiles:
-                    cv2.rectangle(roi_color, (ex, ey), (ex+ew, ey+eh), (255,127,200),2)
-                #Paint bodies
-                for(ex, ey, ew, eh) in bodies:
-                    cv2.rectangle(roi_color, (ex, ey), (ex+ew, ey+eh), (255,127,0),2)
+#                 for(ex, ey, ew, eh) in smiles:
+#                     cv2.rectangle(roi_color, (ex, ey), (ex+ew, ey+eh), (255,127,200),2)
+                
                 print("Eyes : {0}".format(len(eyes)))
                 print("Left eyes : {0}".format(len(left_eyes)))
                 print("Right eyes : {0}".format(len(right_eyes)))
