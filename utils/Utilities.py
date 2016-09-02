@@ -169,8 +169,8 @@ def resize_img(img, longest_side=500):
     height, width = img.shape[:2]
     factor = 0
     if height > width:
-        factor = (500*100/height)/100
+        factor = (longest_side*100/height)/100
     else:
-        factor = (500*100/width)/100
+        factor = (longest_side*100/width)/100
     res = cv2.resize(img,None,fx=factor, fy=factor, interpolation = cv2.INTER_CUBIC)
     return res

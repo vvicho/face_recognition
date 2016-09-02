@@ -1,4 +1,9 @@
 '''
+Created on Aug 23, 2016
+
+@author: daniel
+'''
+'''
 Created on Jun 23, 2016
 
 @author: daniel
@@ -9,7 +14,6 @@ import numpy as np
 import utils.Utilities as uti
 import utils
 import time
-from math import atan2, pi
 
 start_time = time.time()
 
@@ -186,59 +190,3 @@ def detect(filename=None, folder=None, num_of_people=people, num_of_pics=pic_per
 # detect(folder="George_W_Bush")
 # detect(filename='George_W_Bush_0011.jpg')
 detect()
-
-# Rotate the face so that the two eyes are horizontal
-# Scale the face so that the distance between the two eyes is always the same
-# Translate the face so that the eyes are always centered horizontally and at the desired height
-# Crop the outer parts of the face, since we want to crop away the image background, hair, forehead, ears and chin
-
-def warpAffine(left_eye, right_eye, gray):
-    
-    #Get the center between the two eyes
-    eyes_center_x = (left_eye.x + right_eye.x) / 2
-    eyes_center_y = (left_eye.y + right_eye.y) / 2
-    eyes_center = (eyes_center_x, eyes_center_y)
-    
-    #Get the angle between the 2 eyes
-    dy = right_eye.y - left_eye.y
-    dx = right_eye.x - left_eye.x
-    len = (dx**2 + dy**2) ** 0.5
-    
-    #Convert radians to degrees
-    angle = atan2(dy, dx) * 180.0/ pi
-    
-    # Hand measurements shown that the left eye center should
-    # ideally be roughly at (0.16, 0.14) of a scaled face image
-    DESIRED_LEFT_EYE_X  = 0.16
-    DESIRED_RIGHT_EYE_X = (1.0 - 0.16)
-    
-    # Get the amount we need to scale the image to be the desired 
-    # fixed size we want
-    
-    DESIRED_FACE_WIDTH  = 70 
-    DESIRED_FACE_HEIGHT = 70
-    
-    desired_len = (DESIRED_RIGHT_EYE_X - 0.16)
-    scale = desired_len * DESIRED_FACE_WIDTH / len
-    
-    #Get the transformation matrix for the desired angle & Size
-    rot_mat = cv2.getRotationMatrix2D(eyes_center, angle, scale)
-    
-    #shift the center of the eyes to be the desired center
-    ex = DESIRED_FACE_WIDTH * 0.5 - eyes_center.x
-    ''' !!!!!!!!!!!   '''
-    ey = DESIRED_FACE_HEIGHT * DESIRED_LEFT_EYE_X - eyes_center.y 
-    ''' !!!!!!!!!!!   '''
-    
-#     rot_mat.at(0,2) += ex
-#     rot_mat.at(1,2) += ey 
-    rot_mat[0,2] += ex
-    rot_mat[1,2] += ey 
-    
-    # Transform the face image to the desired angle & size & position!
-    # Also clear the transformed image background to a default grey
-    warped = np.mat((DESIRED_FACE_HEIGHT, DESIRED_FACE_WIDTH), np.uint8)
-    
-    cv2.warpAffine(gray, warped, rot_mat, len(warped))
-    
-    w = face    

@@ -8,7 +8,7 @@ from io import BytesIO
 
 CASCADE = "/home/daniel/opencv/data/haarcascades/haarcascade_frontalface_alt.xml"
 OUTPUT_DIRECTORY = "/home/daniel/workspace/Project/Images/facebook/"
-ACCESS_TOKEN = "EAACEdEose0cBAG1RD98iXkZA3bRAYcVjI2I7l6Qq2zZBvv1aw1Tdkn1qbzoAleCqtJb4UgLM48zhijWuKp7ZCKQrhI7zCWdg1z8DmI0F2naBYYIUIX24sQzZBkZCcBlry9rbOD0FEF4TV2WyrgYlyVg0Bld7j5wyaUCbWI7rZAdgZDZD"
+ACCESS_TOKEN = "EAACEdEose0cBAFlgL5qZCQSDQLFqZCVpdy8nWH0VhcJYf1a70qzqD55cHaaBMGGndZBqaFe7fd5qCALp0WMQfqwIqVW5ffTkxvsRrSaBf2pDVYj58cLDKNxKMi8TBKktYqtejJ1Acm5e8Q5u1ZCG7ukXBluGaUUlzETzuPxfIgZDZD"
 
 IMAGE_SCALE = 2
 haar_scale = 1.2

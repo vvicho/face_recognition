@@ -29,16 +29,16 @@ while True:
     faces = faceCascade.detectMultiScale(
         gray,
         scaleFactor=1.1,
-        minNeighbors=3,
+        minNeighbors=5,
         minSize=(30, 30),
         flags=cv2.CASCADE_SCALE_IMAGE
     )
 
-    profile_faces = faceCascade.detectMultiScale(gray,
-        scaleFactor=1.1,
-        minNeighbors=3,
-        minSize=(30, 30),
-        flags=cv2.CASCADE_SCALE_IMAGE)
+#     profile_faces = faceCascade.detectMultiScale(gray,
+#         scaleFactor=1.1,
+#         minNeighbors=3,
+#         minSize=(30, 30),
+#         flags=cv2.CASCADE_SCALE_IMAGE)
 
     # Draw a rectangle around the faces
     for (x, y, w, h) in faces:
@@ -63,13 +63,14 @@ while True:
 #         for(ex, ey, ew, eh) in smiles:
 #             cv2.rectangle(roi_color, (ex, ey), (ex+ew, ey+eh), (255,127,200),2)
 
-    for (x, y, w, h) in profile_faces:
-        cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
-        roi_gray = gray[y:y+h, x:x+w]
-        roi_color = frame[y:y+h, x:x+w]
+#     for (x, y, w, h) in profile_faces:
+#         cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
+#         roi_gray = gray[y:y+h, x:x+w]
+#         roi_color = frame[y:y+h, x:x+w]
 
     # Display the resulting frame
     cv2.imshow('Video', frame)
+    cv2.imshow('Face', roi_color)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
