@@ -7,7 +7,7 @@ import os
 import random
 from random import shuffle
 from utils import Photo as photo_obj
-import cv2
+import cv2 
 import glob
 
 def getFiles(direc, max_photos=-1):
@@ -38,7 +38,7 @@ def get_file_name(file_path):
     trimmed_path = file_path.split('/')
     return trimmed_path[len(trimmed_path)-1]
 
-print((getFiles("/home/daniel/workspace/Project/Images/yalefaces/jpeg/")))
+# print((getFiles("/home/daniel/workspace/Project/Images/yalefaces/jpeg/")))
 
 def getSubdirectories(direc):
     '''
@@ -165,12 +165,24 @@ def write_file(filename, str_array):
     
     
 # Photo Utils
-def resize_img(img, longest_side=500):
+def resize_img(img, longest_side=500.):
     height, width = img.shape[:2]
     factor = 0
+    print('Medidas')
+    print('shape = {}'.format(img.shape))
+    print(width, height)
+    print'len(img) = {0}  len(img[0]) = {1}'.format(len(img), len(img[0]))
     if height > width:
-        factor = (longest_side*100/height)/100
+        scale = float(len(img)) / longest_side
+        print 'scale = {0}'.format(scale)
+        factorX = cv2.cv.Round(len(img[0]) // scale)
+        factorY = longest_side
     else:
-        factor = (longest_side*100/width)/100
-    res = cv2.resize(img,None,fx=factor, fy=factor, interpolation = cv2.INTER_CUBIC)
+        scale = float(len(img[0])) / longest_side
+        print 'scale = {0}'.format(scale)
+        factorY = cv2.cv.Round(len(img) / scale)
+        factorX = longest_side
+#     res = cv2.resize(img,None,fx=factor, fy=factor, interpolation = cv2.INTER_CUBIC)
+    print(factorX, factorY)
+    res = cv2.resize(img, (factorX, factorY))
     return res
