@@ -83,7 +83,7 @@ Search for just a single object in the image.
 Input is shrunk for faster detection
 Returns singe largest object
 '''
-def detectLargestObject(img, cascade, largestObject, scaleWidth, details):
+def detectLargestObject(img, cascade, scaleWidth, details):
     #Only search 1 object
     flags = cv2.CASCADE_FIND_BIGGEST_OBJECT
     

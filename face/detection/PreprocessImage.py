@@ -24,16 +24,54 @@ FACE_ELLIPSE_H = 0.80
  Or if you don't want a 2nd eye detection, just pass an uninitialized CascadeClassifier.
  Can also store the searched left & right eye regions if desired.
 '''
-def detectBothEyes(face, cascade_classifier, eye_cascade, left_eye, right_eye,
+def detectBothEyes(face, cascade_classifier, eye_cascade1, eye_cascade2, left_eye, right_eye,
                    searched_left_eye, searched_right_eye):
     
+    leftEye = rightEye = None
+    
+    # For default eye.xml or eyeglasses.xml: Finds both eyes in roughly 40% of detected faces, but does not detect closed eyes
     eye_sx = 0.16
     eye_sy = 0.26
     eye_sw = 0.30
     eye_sh = 0.28
     
+    cols = len(face[0])
+    rows = len(face)    
+    
+    leftX = cv2.cv.Round(cols * eye_sx)
+    topY = cv2.cv.Round(rows * eye_sy)
+    widthX = cv2.cv.Round(cols * eye_sw)
+    heightY = cv2.cv.Round(rows * eye_sh)
+    rightX = cv2.cv.Round(cols * (1.0 - eye_sx - eye_sw)) # start of right eye corner
+    
+    topLeftOfFace = face[topY:topY + heightY, leftX:leftX + widthX]
+    topRightOfFace = face[topY:topY + heightY, rightX:rightX + widthX]
+    
+    leftEyeRect = rightEyeRect = None
+    
+    
+    # Return the search windows to the caller, if desired
+    searched_left_eye = [leftX, topY, widthX, heightY]
+    searched_right_eye = [rightX, topY, widthX, heightY]
+    
+    # Search the left region, then the rioght region using the 1st eye detector
+    leftEyeRect = detectLargestObject(topLeftOfFace, eye_cascade1, cols, "detectBothEyes - cascade1 - leftEye")
+    rightEyeRect = detectLargestObject(topRightOfFace, eye_cascade1, cols, "detectBothEyes - cascade1 - rightEye")
+    
+    
+    '''
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    CONTINUE
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    '''
+    
     height, width = face.shape[:2]
     
+    
+    
+    
+    
+    return leftEye, rightEye
     
 print(round(02.365))
 
