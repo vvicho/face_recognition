@@ -18,7 +18,7 @@ profile_face_cascade = cv2.CascadeClassifier(haarcascades_path + 'haarcascade_pr
 nose_cascade = cv2.CascadeClassifier(haarcascades_path + 'Nariz.xml')
 # smile_cascade =  cv2.CascadeClassifier(haarcascades_path + 'haarcascade_smile.xml')
 
-video_capture = cv2.VideoCapture(0)
+video_capture = None
 
 while True:
     # Capture frame-by-frame
