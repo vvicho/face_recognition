@@ -7,6 +7,7 @@ Created on Sep 21, 2016
 import cv2
 import sys
 import time
+import numpy as np
 from face.detection.PreprocessImage import getPreprocessedFace
 from face.recognition.Recognition import getSimilarity, learnCollectedFaces,\
     reconstructFace
@@ -244,7 +245,16 @@ def doStuff(src, faceCascade, eyeCascade1, eyeCascade2, oldPreprocessedFace):
                 cv2.rectangle(src, ptTopLeft, ptBottomRight, cv2.cv.CV_RGB(200,200,200), 1, cv2.CV_AA)
                 
         elif mMode == MODE.DELETE_ALL:
-            pass        
+            mSelectedPerson = -1
+            mNumPersons = 0
+            mLatestFaces = []
+            preprocessedFaces = []
+            faceLabels = []
+            oldPreprocessedFace = np.array()
+        else:
+            print "ERROR: Invalid run mode {}".format(mMode)
+            sys.exit()
+            
     return None
 
 def recognizeAndTrain(src, faceCascade, eyeCascade1, eyeCascade2):
