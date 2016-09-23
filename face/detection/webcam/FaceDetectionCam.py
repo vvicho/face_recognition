@@ -18,18 +18,19 @@ profile_face_cascade = cv2.CascadeClassifier(haarcascades_path + 'haarcascade_pr
 nose_cascade = cv2.CascadeClassifier(haarcascades_path + 'Nariz.xml')
 # smile_cascade =  cv2.CascadeClassifier(haarcascades_path + 'haarcascade_smile.xml')
 
-video_capture = None
+video_capture = cv2.VideoCapture(0)
 
 while True:
     # Capture frame-by-frame
     ret, frame = video_capture.read()
+#     print(frame.shape)
 
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     
     faces = faceCascade.detectMultiScale(
         gray,
-        scaleFactor=1.1,
-        minNeighbors=5,
+        scaleFactor=1.15,
+        minNeighbors=3,
         minSize=(30, 30),
         flags=cv2.CASCADE_SCALE_IMAGE
     )
@@ -72,10 +73,10 @@ while True:
     cv2.imshow('Video', frame)
     
     #Display Face only
-    if roi_color == None:
-        cv2.destroyWindow('Face')
-    else:
-        cv2.imshow('Face', roi_color)
+#     if roi_color == None:
+#         cv2.destroyWindow('Face')
+#     else:
+#         cv2.imshow('Face', roi_color)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break

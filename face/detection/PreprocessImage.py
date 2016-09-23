@@ -160,8 +160,10 @@ def equalizeLeftAndRightHalves(faceImg) :
  If a face is found, it can store the rect coordinates into 'storeFaceRect' and 'storeLeftEye' & 'storeRightEye' if given,
  and eye search regions into 'searchedLeftEye' & 'searchedRightEye' if given.
 '''
-def getPreprocessedFace(srcImg, desiredFaceWidth, faceCascade, eyeCascade1, eyeCascade2, doLeftAndRightSeparately=True, storeFaceRect, storeLeftEye, storeRightEye, searchedLeftEye, searchedRightEye):
-    # variable[x, y, w, h]
+def getPreprocessedFace(srcImg, desiredFaceWidth, faceCascade, eyeCascade1, eyeCascade2, doLeftAndRightSeparately=True
+                        , storeFaceRect=None, storeLeftEye=None, storeRightEye=None
+                        , searchedLeftEye=None, searchedRightEye=None):
+#     variable[x, y, w, h]
 #     storedFaceRect = [0,0,0,0]
 #     storedLeftEye = [0,0,0,0]
 #     storedRightEye = [0,0,0,0]
@@ -276,7 +278,7 @@ def getPreprocessedFace(srcImg, desiredFaceWidth, faceCascade, eyeCascade1, eyeC
             
             imshow('dstImg', dstImg)
             
-            return dstImg
+            return dstImg, storeFaceRect, storeLeftEye, storeRightEye, searchedLeftEye, searchedRightEye
             
             
             

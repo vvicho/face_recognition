@@ -7,12 +7,14 @@ import numpy as np
 from PIL import Image
 from utils import Utilities as uti
 
+face_size = 70
+
 # For face detection we will use the Haar Cascade provided by OpenCV.
 cascadePath = "/home/daniel/opencv/data/haarcascades/haarcascade_frontalface_default.xml"
 faceCascade = cv2.CascadeClassifier(cascadePath)
 
 # For face recognition we will the the LBPH Face Recognizer 
-recognizer = cv2.face.createLBPHFaceRecognizer()
+recognizer = cv2.createFisherFaceRecognizer()
 
 def get_images_and_labels(path):
     # Append all the absolute image paths in a list image_paths
@@ -28,13 +30,16 @@ def get_images_and_labels(path):
         image_pil = Image.open(image_path).convert('L')
         # Convert the image format into numpy array
         image = np.array(image_pil, 'uint8')
+        
         # Get the label of the image
         nbr = int(os.path.split(image_path)[1].split(".")[0].replace("subject", ""))
         # Detect the face in the image
         faces = faceCascade.detectMultiScale(image)
         # If face is detected, append the face to images and the label to labels
         for (x, y, w, h) in faces:
-            images.append(image[y: y + h, x: x + w])
+            faceImg= image[y: y + h, x: x + w]
+            faceImg = cv2.resize(faceImg, (face_size, face_size))
+            images.append(faceImg)
             labels.append(nbr)
 #             cv2.imshow("Adding faces to traning set...", image[y: y + h, x: x + w])
 #             cv2.waitKey(50)
@@ -90,8 +95,8 @@ def get_images_and_labels2(path, train=True):
     return images, labels
 
 # Path to the Yale Dataset
-path = '/home/daniel/workspace/Project/Images/yalefaces/jpeg/'
-# path = '/home/daniel/workspace/Project/Images/Test/'
+# path = '/home/daniel/workspace/Project/Images/yalefaces/jpeg/'
+path = '/home/daniel/workspace/Project/Images/Test/1/'
 
 
 
@@ -99,10 +104,19 @@ path = '/home/daniel/workspace/Project/Images/yalefaces/jpeg/'
 # Call the get_images_and_labels function and get the face images and the 
 # corresponding labels
 images, labels = get_images_and_labels(path)
+for n in images:
+#     print (n)
+    print "x = {} y = {} pixels = {}".format(len(n), len(n[0]), len(n) * len(n[0]))
+    pass
 cv2.destroyAllWindows()
 
 # Perform the tranining
 recognizer.train(images, np.array(labels))
+print recognizer.getMat("eigenvectors")
+help(recognizer)
+print(recognizer.__str__())
+print dir(recognizer)
+
 
 # Append the images with the extension .sad into image_paths
 image_paths = uti.getAllPhotos(path)
