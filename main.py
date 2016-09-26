@@ -9,9 +9,7 @@ import sys
 import time
 import numpy as np
 from face.detection.PreprocessImage import getPreprocessedFace
-from face.recognition.Recognition import getSimilarity, learnCollectedFaces,\
-    reconstructFace
-from cv2 import imshow
+from face.recognition.Recognition import getSimilarity, learnCollectedFaces, reconstructFace
 
 #Enums to define states
 class TYPE:
@@ -54,20 +52,19 @@ preprocessLeftAndRightSeparately = True
 # whereas lower values mean more faces will be classified as unknown.
 UNKNOWN_PERSON_THRESHOLD = 0.7 
 
-videoCapture = None
-mMode = None
+mMode = MODE.DETECTION
 mNumPersons = 0
 mLatestFaces = []
 mDebug = False
 
-runType = TYPE.PICTURE
+runType = TYPE.VIDEO
 
 
 
 def run():
     faceCascade, eyeCascade1, eyeCascade2 = initDetectors()
     
-    recognizeAndTrain()
+    recognizeAndTrain(None, faceCascade, eyeCascade1, eyeCascade2)
     return None
     
     
@@ -118,28 +115,53 @@ def initWebcam():
 def doStuff(src, faceCascade, eyeCascade1, eyeCascade2, oldPreprocessedFace):
     # Run the face recognition system on the src image. 
     # It will draw some things onto the given image, so make sure it is not read-only memory!
+    global mMode
     identity = -1
     mTime = time.time()
     # Find face and preprocess it to have a standard size, contrast and brightness
     preprocessedFace, faceRect, leftEye, rightEye, searchedLeftEye, searchedRightEye = getPreprocessedFace(src, faceWidth, faceCascade, eyeCascade1, eyeCascade2, preprocessLeftAndRightSeparately)
+    print "0000000000000000000000000000000000000000000000000000"
+    print preprocessedFace
+    print "0000000000000000000000000000000000000000000000000000"
+    print faceRect
+    print "0000000000000000000000000000000000000000000000000000"
+    print leftEye
+    print "0000000000000000000000000000000000000000000000000000"
+    print rightEye
+    print "0000000000000000000000000000000000000000000000000000"
+    print searchedLeftEye
+    print "0000000000000000000000000000000000000000000000000000"
+    print searchedRightEye
+    print "1111111111111111111111111111111111111111111111111111"
     
     gotFaceAndEyes = False
-    if preprocessedFace:
+    if preprocessedFace is not None:
         gotFaceAndEyes = True
         
     # Draw an anti-aliased rectangle around the detected face
-    if len(faceRect[0]) > 0:
+    if faceRect is not None and len(faceRect) > 0:
         print faceRect
-        cv2.rectangle(src, 'faceRect[0] #Point1','faceRect[1] #Point2', cv2.cv.CV_RGB(255,255,0), 2, cv2.cv.CV_AA) # Check faceRect data
+        
+        cv2.rectangle(src, (faceRect[0], faceRect[1]), (faceRect[2], faceRect[3]), (255,255,0), 2, cv2.cv.CV_AA) # Check faceRect data
         
         eyeColor = cv2.cv.CV_RGB(0,255,255)
         
         print "Check circle function for python"
         if leftEye[0] >= 0:
-            
-            cv2.circle() # Check circle for python
+            print leftEye
+            leftEyeCenterX = cv2.cv.Round(faceRect[0]+leftEye[0])
+            leftEyeCenterY = cv2.cv.Round(faceRect[1]+leftEye[1])
+#             leftEyeCenterX = cv2.cv.Round((leftEye[0] + leftEye[2])/2.0)
+#             leftEyeCenterY = cv2.cv.Round((leftEye[1] + leftEye[3])/2.0)
+            radius = 6
+            cv2.circle(src, (leftEyeCenterX, leftEyeCenterY), radius, (200,200,0)) # Check circle for python
         if rightEye[0] >= 0:
-            cv2.circle() # Check circle for python
+            rightEyeCenterX = cv2.cv.Round(faceRect[0]+rightEye[0])
+            rightEyeCenterY = cv2.cv.Round(faceRect[1]+rightEye[1])
+#             rightEyeCenterX = cv2.cv.Round((rightEye[0] + rightEye[2])/2.0)
+#             rightEyeCenterY = cv2.cv.Round((rightEye[1] + rightEye[3])/2.0)
+            radius = 6
+            cv2.circle(src, (rightEyeCenterX, rightEyeCenterY), radius, (200,200,0)) # Check circle for python
             
         if mMode == MODE.DETECTION:
             # Don't do anything special
@@ -263,7 +285,7 @@ def recognizeAndTrain(src, faceCascade, eyeCascade1, eyeCascade2):
     oldTime = 0
     # Start in detection mode
     mMode = MODE.DETECTION
-    
+    cam = cv2.VideoCapture(0)
     
     if runType == TYPE.PICTURE:
         # Run once for pictures
@@ -271,10 +293,28 @@ def recognizeAndTrain(src, faceCascade, eyeCascade1, eyeCascade2):
     else:
         # Run forever until user hits esc in case it is video 
         while True:
-            ret, frame = videoCapture.read() 
+            ret, frame = cam.read()
             oldPreprocessedFace = doStuff(frame, faceCascade, eyeCascade1, eyeCascade2, oldPreprocessedFace)
+            cv2.imshow('Video', frame)
+            
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                cam.release()
+                cv2.destroyAllWindows()
+                break
+            
         
-        
+run()
+
+# cam = cv2.VideoCapture(0)
+# while True:
+#     ret, frame = cam.read()
+#     cv2.imshow('bla', frame)
+#     
+#     if cv2.waitKey(1) & 0xFF == ord('q'):
+#         break
+
+# cam.release()
+# cv2.destroyAllWindows()
         
         
         

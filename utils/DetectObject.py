@@ -11,6 +11,17 @@ import utils
 import time
 from math import atan2, pi
 
+drawFaceRectangles = False
+
+def drawFaceOutline(img, x,y,w,h, scale):
+    
+            x = cv2.cv.Round(x * scale)
+            y = cv2.cv.Round(y * scale)
+            w = cv2.cv.Round(w * scale)
+            h = cv2.cv.Round(h * scale)
+            print x, y, w, h 
+            cv2.rectangle(img, (x, y), (x+w, y+h), (0, 255, 0), 2)
+    
 
 '''
     Search for objects such as faces or eyes in the image using the given parameters.
@@ -19,6 +30,10 @@ from math import atan2, pi
     Returns
 '''
 def detectObjectsCustom(img, cascade, scaleWidth, flags, minFeatureSize, searchScaleFactor, minNeighbors, firstDetection, details):
+    if img is None:
+        print "img is None"
+        return None
+    
     # Will transform image to grayscale if it is the first run 
     if firstDetection:
         if len(img.shape) > 2:
@@ -28,7 +43,9 @@ def detectObjectsCustom(img, cascade, scaleWidth, flags, minFeatureSize, searchS
     else:
         gray = img
     
-    scale = float(len(img[0])) / scaleWidth
+    print len(img[0])
+    print scaleWidth
+    scale = len(img[0]) / float(scaleWidth)
     
     if len(img) > scaleWidth:
         # Shrink image to run faster
@@ -52,6 +69,11 @@ def detectObjectsCustom(img, cascade, scaleWidth, flags, minFeatureSize, searchS
     print('Cascade')
     print(type(objects))
     print(objects)
+    
+    if drawFaceRectangles:
+        for (x,y,w,h) in objects:
+            drawFaceOutline(img, x, y, w, h, scale)
+        
     
     #Enlarge the results if the image was shrunk before
     if len(objects) > 0:
@@ -95,8 +117,8 @@ def detectLargestObject(img, cascade, scaleWidth, details):
     minNeighbors = 4
     
     #Perform detection
-    objects = detectObjectsCustom(img, cascade, scaleWidth, flags, minFeatureSize, searchScaleFactor, minNeighbors)
-    if len(objects) > 1:
+    objects = detectObjectsCustom(img, cascade, scaleWidth, flags, minFeatureSize, searchScaleFactor, minNeighbors, True, "")
+    if (objects is not None) and len(objects) >= 1:
         largestObject = objects[0]
     else:
         largestObject = None

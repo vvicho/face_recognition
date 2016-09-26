@@ -8,7 +8,7 @@ import numpy as np
 import cv2
 import sys
 
-from main import preprocessedFaces
+# from main import preprocessedFaces
 
 
 
@@ -65,7 +65,7 @@ def reconstructFace(model, preprocessedFace):
         eigenvectors = model.get("eigenvectors")
         averageFaceRow = model.get("mean")
         
-        faceHeight = len(preprocessedFaces)
+        faceHeight = len(preprocessedFace)
         reshapedPreprocessedFace = cv2.cv.ReshapeMatND(preprocessedFace, 1, 1)
         
         # Project the input image onto the PCA subspace
