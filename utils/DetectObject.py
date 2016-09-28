@@ -11,7 +11,15 @@ import utils
 import time
 from math import atan2, pi
 
-drawFaceRectangles = False
+drawFaceRectangles = True
+
+mDebug = False
+
+def myPrint(obj, flag=False):
+    global mDebug
+    if mDebug or flag:
+        print obj 
+
 
 def drawFaceOutline(img, x,y,w,h, scale):
     
@@ -19,8 +27,8 @@ def drawFaceOutline(img, x,y,w,h, scale):
             y = cv2.cv.Round(y * scale)
             w = cv2.cv.Round(w * scale)
             h = cv2.cv.Round(h * scale)
-            print x, y, w, h 
-            cv2.rectangle(img, (x, y), (x+w, y+h), (0, 255, 0), 2)
+            myPrint((x, y, w, h)) 
+            cv2.rectangle(img, (x, y), (x+w, y+h), (0, 0, 0), 2)
     
 
 '''
@@ -43,14 +51,14 @@ def detectObjectsCustom(img, cascade, scaleWidth, flags, minFeatureSize, searchS
     else:
         gray = img
     
-    print len(img[0])
-    print scaleWidth
+#     print len(img[0])
+#     print scaleWidth
     scale = len(img[0]) / float(scaleWidth)
     
     if len(img) > scaleWidth:
         # Shrink image to run faster
         scaleHeight = cv2.cv.Round(len(img) / scale )
-        print scaleWidth, scaleHeight
+        myPrint(scaleWidth, scaleHeight)
         inputImg = cv2.resize(gray, (scaleWidth, scaleHeight))
     else:
         # Access input image since it is already small
@@ -66,9 +74,9 @@ def detectObjectsCustom(img, cascade, scaleWidth, flags, minFeatureSize, searchS
         minSize=minFeatureSize,
         # equalizedImage, searchScaleFactor, minNeighbors, flags, minFeatureSize
                                        )
-    print('Cascade')
-    print(type(objects))
-    print(objects)
+    myPrint('Cascade')
+    myPrint(type(objects))
+    myPrint(objects)
     
     if drawFaceRectangles:
         for (x,y,w,h) in objects:
@@ -79,8 +87,8 @@ def detectObjectsCustom(img, cascade, scaleWidth, flags, minFeatureSize, searchS
     if len(objects) > 0:
         for i in range(len(objects)):
             objects[i] = [objects[i][0] * scale, objects[i][1] * scale, objects[i][2] * scale, objects[i][3] * scale]
-    print('multiply')
-    print(objects)
+    myPrint('multiply')
+    myPrint(objects)
     
     
     # Make sure the object is completely within the image, in case it was on a border
@@ -94,8 +102,8 @@ def detectObjectsCustom(img, cascade, scaleWidth, flags, minFeatureSize, searchS
         if objects[i][1] + objects[i][3] > len(img):
             objects[i][1] = len(img) - objects[i][3]
 
-    print('adjusted')
-    print(objects)
+    myPrint('adjusted')
+    myPrint(objects)
     
     return objects        
 
@@ -110,11 +118,11 @@ def detectLargestObject(img, cascade, scaleWidth, details):
     flags = cv2.CASCADE_FIND_BIGGEST_OBJECT
     
     #smallest object size
-    minFeatureSize = (20,20)
+    minFeatureSize = (30,30)
     #How detailed should the search be
-    searchScaleFactor = 1.1
+    searchScaleFactor = 1.15
     #How much the dections should be filtered out
-    minNeighbors = 4
+    minNeighbors = 3
     
     #Perform detection
     objects = detectObjectsCustom(img, cascade, scaleWidth, flags, minFeatureSize, searchScaleFactor, minNeighbors, True, "")
@@ -134,11 +142,11 @@ Return recognized objects
 def detectManyObjects(img, cascade, scaleWidth, firstDetection, details):
     flags = cv2.CASCADE_SCALE_IMAGE
     
-    minFeatureSize = (20, 20)
+    minFeatureSize = (30,30)
     
-    searchScaleFactor = 1.1
+    searchScaleFactor = 1.15
     
-    minNeighbors = 4
+    minNeighbors = 3
     
     return detectObjectsCustom(img, cascade, scaleWidth, flags, minFeatureSize, searchScaleFactor, minNeighbors, firstDetection, details)    
 

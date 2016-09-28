@@ -6,10 +6,10 @@ Created on Sep 2, 2016
 
 # import cv2
 import cv2 
-import utils.DetectObject
 from utils.DetectObject import detectLargestObject
 from math import atan2
 import numpy as np
+import math
 
 DESIRED_LEFT_EYE_X = 0.16
 DESIRED_LEFT_EYE_Y = 0.14
@@ -17,6 +17,12 @@ FACE_ELLIPSE_CY = 0.40
 FACE_ELLIPSE_W = 0.50
 FACE_ELLIPSE_H = 0.80
 
+mDebug = False
+
+def myPrint(obj, flag=False):
+    global mDebug
+    if mDebug or flag:
+        print obj 
 
 '''
  Search for both eyes within the given face image. Returns the eye centers in 'leftEye' and 'rightEye',
@@ -56,49 +62,48 @@ def detectBothEyes(face, eye_cascade1, eye_cascade2, searched_left_eye, searched
     searched_right_eye = [rightX, topY, widthX, heightY]
     
     # Search the left region, then the right region using the 1st eye detector
-    print "DETECT LEFT EYE"
-    print topLeftOfFace
-    print cols
-    print "Start"
-    print topLeftOfFace
+    myPrint ("DETECT LEFT EYE")
+    myPrint (topLeftOfFace)
+    myPrint (cols)
+    myPrint ("Start")
+    myPrint (topLeftOfFace)
     cv2.imshow('top left of face', topLeftOfFace)
     cv2.imshow('top right of face', topRightOfFace)
-    leftEyeRect = detectLargestObject(topLeftOfFace, eye_cascade1, cols, "detectBothEyes - cascade1 - leftEye")
-    rightEyeRect = detectLargestObject(topRightOfFace, eye_cascade1, cols, "detectBothEyes - cascade1 - rightEye")
-    print "end"
+    leftEyeRect = detectLargestObject(topLeftOfFace, eye_cascade1, len(topLeftOfFace[0]), "detectBothEyes - cascade1 - leftEye")
+    rightEyeRect = detectLargestObject(topRightOfFace, eye_cascade1,len(topRightOfFace[0]), "detectBothEyes - cascade1 - rightEye")
+    myPrint ("end")
     
-    print "---------EYE RECTS"
-    print "left"
-    print leftEyeRect
-    print "right"
-    print rightEyeRect
+    myPrint ("---------EYE RECTS")
+    myPrint ("left")
+    myPrint (leftEyeRect)
+    myPrint ("right")
+    myPrint (rightEyeRect)
     
     # if the eye is not detected, try another classifier
-    if (leftEyeRect is None) or len(leftEyeRect) <= 0 and (eye_cascade2 is not None):
-        leftEyeRect = detectLargestObject(topLeftOfFace, eye_cascade2, cols, "detectBothEyes - cascade2 - leftEye")
+    if (leftEyeRect is None) or (len(leftEyeRect) <= 0 and (eye_cascade2 is not None)):
+        leftEyeRect = detectLargestObject(topLeftOfFace, eye_cascade2, len(topLeftOfFace[0]), "detectBothEyes - cascade2 - leftEye")
     
     #Same as above, try another classifier if the eye is not detected.
-    if (rightEyeRect is None) or len(rightEyeRect) <= 0 and (eye_cascade2 is not None):
-        rightEyeRect = detectLargestObject(topRightOfFace, eye_cascade2, cols, "detectBothEyes - cascade2 - rightEye")
+    if (rightEyeRect is None) or (len(rightEyeRect) <= 0 and (eye_cascade2 is not None)):
+        rightEyeRect = detectLargestObject(topRightOfFace, eye_cascade2, len(topRightOfFace[0]), "detectBothEyes - cascade2 - rightEye")
     
     if (leftEyeRect is not None) and len(leftEyeRect) > 0:    # Check if the eye was detected
         leftEyeRect[0] += leftX # Adjust the left-eye rectangle because the face border was removed
         leftEyeRect[1] += topY
-        leftEye = (leftEyeRect[0] + leftEyeRect[2]/2.0, leftEyeRect[1] + leftEyeRect[3]/2.0)
+        leftEye = (leftEyeRect[0] + leftEyeRect[2]/2, leftEyeRect[1] + leftEyeRect[3]/2)
     else:
         leftEye = (-1, -1) # return an invalid point
     
     if (rightEyeRect is not None) and len(rightEyeRect) > 0:       # Check if the eye was detected
         rightEyeRect[0] += rightX   # Adjust the right-eye rectangle because the face border was removed
         rightEyeRect[1] += topY
-        rightEye = (rightEyeRect[0] + rightEyeRect[2]/2.0, rightEyeRect[1] + rightEyeRect[3]/2.0)
+        rightEye = (rightEyeRect[0] + rightEyeRect[2]/2, rightEyeRect[1] + rightEyeRect[3]/2)
     else:
         rightEye = (-1, -1)
     
  
     return leftEye, rightEye, searched_left_eye, searched_right_eye
     
-print(round(02.365))
 
 '''
  Histogram Equalize seperately for the left and right sides of the face.
@@ -196,8 +201,8 @@ def getPreprocessedFace(srcImg, desiredFaceWidth, faceCascade, eyeCascade1, eyeC
     faceRect = detectLargestObject(img=srcImg, cascade=faceCascade, scaleWidth=scaleWidth, details='getProcessedFace')
     scaleFactor= len(srcImg[0]) / float(scaleWidth) 
     
-    print "FACE RECT = "
-    print faceRect
+    myPrint ("FACE RECT = ")
+    myPrint (faceRect)
     
     # Check if a face was detected
     if (faceRect is not None) and  len(faceRect) > 0:
@@ -228,15 +233,15 @@ def getPreprocessedFace(srcImg, desiredFaceWidth, faceCascade, eyeCascade1, eyeC
         # Search for the 2 eyes at the full resolution, since eye detection needs max resolution possible
         # leftEye, rightEye = None, None
         
-        print "-detect Both eyes enter"
+        myPrint ("-detect Both eyes enter")
         leftEye, rightEye, searchedLeftEye, searchedRightEye = detectBothEyes(gray, eyeCascade1, eyeCascade2, searchedLeftEye, searchedRightEye)
-        print "-detect Both eyes exit"
+        myPrint ("-detect Both eyes exit")
         
-        print "---------EYES -----------"
-        print leftEye
-        print rightEye
+        myPrint ("---------EYES -----------")
+        myPrint (leftEye)
+        myPrint (rightEye)
         
-        print "scale factor = {}".format(scaleFactor)
+        myPrint ("scale factor = {}".format(scaleFactor))
         
         if storeLeftEye is None:
             storeLeftEye = leftEye
@@ -246,19 +251,32 @@ def getPreprocessedFace(srcImg, desiredFaceWidth, faceCascade, eyeCascade1, eyeC
             storeRightEye = rightEye
 #             storeRightEye = tuple([cv2.cv.Round(n * scaleFactor) for n in rightEye])
             
-        print storeLeftEye
-        print storeRightEye
+        myPrint (storeLeftEye)
+        myPrint (storeRightEye)
+        
+        ##########################
+#         leftEyeCenterX = cv2.cv.Round((2*searchedLeftEye[0] + searchedLeftEye[2]) / 2.0)
+#         leftEyeCenterY = cv2.cv.Round((2*searchedLeftEye[1] + searchedLeftEye[3]) / 2.0)
+#         radius = 8
+#         cv2.circle(gray, (leftEyeCenterX, leftEyeCenterY), radius, (200,200,0)) # Check circle for python
+#         rightEyeCenterX = cv2.cv.Round((2*searchedRightEye[0] + searchedRightEye[2]) / 2.0)
+#         rightEyeCenterY = cv2.cv.Round((2*searchedRightEye[1] + searchedRightEye[3]) / 2.0)
+#         cv2.circle(gray, (rightEyeCenterX, rightEyeCenterY), radius, (200,200,0)) # Check circle for python
+#         cv2.imshow('gray',gray)      
+
+        ##########################
+        
         
         #Check if both eyes were detected
         if (leftEye is not None) and (rightEye is not None) and leftEye[0] >= 0 and rightEye[0] >= 0:
-            print "--------- BOTH EYES WERE DETECTED----------"
+            myPrint ("--------- BOTH EYES WERE DETECTED----------")
             # Make the face image the same size as the training images
             
             eyesCenter = ((storeLeftEye[0]+storeRightEye[0]) / 2.0, (storeLeftEye[1] + storeRightEye[1]) / 2.0)
             # get the angle between the 2 eyes
             dy = storeRightEye[1] - storeLeftEye[1]
             dx = storeRightEye[0] - storeLeftEye[0]
-            leng = (dx*dx + dy*dy) ** 0.5
+            leng = math.sqrt((dx*dx + dy*dy))
             angle = atan2(dy,dx) * 180.0 / cv2.cv.CV_PI # Convert from radians to degrees
             
             # hand measurements shown that the left eye center should ideally be at roughly (0.19, 0.14) of a scaled face image.
@@ -271,6 +289,8 @@ def getPreprocessedFace(srcImg, desiredFaceWidth, faceCascade, eyeCascade1, eyeC
             # Get the transformation matrix for rotating and scaling the face to the desired angle and size
             rot_mat = cv2.getRotationMatrix2D(eyesCenter, angle, scale)
             # Shift the center of the eyes to be the desired center between the eyes
+            myPrint ("Eyes Center")
+            myPrint (eyesCenter)
             rot_mat[0,2] += desiredFaceWidth * 0.5 - eyesCenter[0]
             rot_mat[1,2] += desiredFaceHeight * DESIRED_LEFT_EYE_Y - eyesCenter[1]
             
@@ -291,8 +311,8 @@ def getPreprocessedFace(srcImg, desiredFaceWidth, faceCascade, eyeCascade1, eyeC
                 equalizeLeftAndRightHalves(warped)
                 
             cv2.imshow('equalized', warped)
-            print "equalized"
-            print warped
+            myPrint ("equalized")
+            myPrint (warped)
             
             #Use the bilateral filter to reduce pixel noise by smoothing the image, but keeping the sharp edges in the face
 #             filtered = np.array(warped.shape[0:1], cv2.CV_8U)
@@ -304,8 +324,8 @@ def getPreprocessedFace(srcImg, desiredFaceWidth, faceCascade, eyeCascade1, eyeC
             
 #             mask = np.array(warped.shape[0:1], cv2.CV_8U, cv2.cv.Scalar(0)) # Empty mask
             mask = np.zeros(warped.shape[0:2], np.uint8) # Empty mask
-            print "MASK"
-            print mask
+            myPrint ("MASK")
+            myPrint (mask)
             faceCenter = (cv2.cv.Round(desiredFaceWidth / 2.0), cv2.cv.Round(desiredFaceHeight * FACE_ELLIPSE_CY))
             size = (cv2.cv.Round(desiredFaceWidth * FACE_ELLIPSE_W), cv2.cv.Round(desiredFaceHeight * FACE_ELLIPSE_H))
             cv2.ellipse(filtered, (faceCenter, size, 0), (255,0,0)) 
@@ -316,8 +336,8 @@ def getPreprocessedFace(srcImg, desiredFaceWidth, faceCascade, eyeCascade1, eyeC
             
             dstImg = np.zeros(warped.shape[0:2])
             dstImg= filtered.copy()
-            print "DST IMG"
-            print dstImg
+            myPrint ("DST IMG")
+            myPrint (dstImg)
 #             cv2.cv.Copy(filtered, dstImg, mask)
             
             cv2.imshow('dstImg', dstImg)
@@ -330,57 +350,3 @@ def getPreprocessedFace(srcImg, desiredFaceWidth, faceCascade, eyeCascade1, eyeC
     return np.zeros(0),  None, None, None, None, None           
     # Mark the detected face region and eye search regions as invalid, in case they aren't detected
 #     if
-
-
-
-'''
-def warpAffine(left_eye, right_eye, gray):
-    
-    #Get the center between the two eyes
-    eyes_center_x = (left_eye.x + right_eye.x) / 2
-    eyes_center_y = (left_eye.y + right_eye.y) / 2
-    eyes_center = (eyes_center_x, eyes_center_y)
-    
-    #Get the angle between the 2 eyes
-    dy = right_eye.y - left_eye.y
-    dx = right_eye.x - left_eye.x
-    len = (dx**2 + dy**2) ** 0.5
-    
-    #Convert radians to degrees
-    angle = atan2(dy, dx) * 180.0/ pi
-    
-    # Hand measurements shown that the left eye center should
-    # ideally be roughly at (0.16, 0.14) of a scaled face image
-    DESIRED_LEFT_EYE_X  = 0.16
-    DESIRED_RIGHT_EYE_X = (1.0 - 0.16)
-    
-    # Get the amount we need to scale the image to be the desired 
-    # fixed size we want
-    
-    DESIRED_FACE_WIDTH  = 70 
-    DESIRED_FACE_HEIGHT = 70
-    
-    desired_len = (DESIRED_RIGHT_EYE_X - 0.16)
-    scale = desired_len * DESIRED_FACE_WIDTH / len
-    
-    #Get the transformation matrix for the desired angle & Size
-    rot_mat = cv2.getRotationMatrix2D(eyes_center, angle, scale)
-    
-    #shift the center of the eyes to be the desired center
-    ex = DESIRED_FACE_WIDTH * 0.5 - eyes_center.x
-    '' !!!!!!!!!!!   ''
-    ey = DESIRED_FACE_HEIGHT * DESIRED_LEFT_EYE_X - eyes_center.y 
-    '' !!!!!!!!!!!   ''
-    
-#     rot_mat.at(0,2) += ex
-#     rot_mat.at(1,2) += ey 
-    rot_mat[0,2] += ex
-    rot_mat[1,2] += ey 
-    
-    # Transform the face image to the desired angle & size & position!
-    # Also clear the transformed image background to a default grey
-    warped = np.mat((DESIRED_FACE_HEIGHT, DESIRED_FACE_WIDTH), np.uint8)
-    
-    cv2.warpAffine(gray, warped, rot_mat, len(warped))
-    
-'''

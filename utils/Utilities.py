@@ -10,6 +10,12 @@ from utils import Photo as photo_obj
 import cv2 
 import glob
 
+
+def myPrint(obj, flag=False):
+    global mDebug
+    if mDebug or flag:
+        print obj
+
 def getFiles(direc, max_photos=-1):
     out = []
     filenames = glob.glob(direc + '*')

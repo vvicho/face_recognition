@@ -25,7 +25,7 @@ eyeCascade1File = haarCascadesPath + 'haarcascade_lefteye_2splits.xml'
 eyeCascade2File = haarCascadesPath + 'haarcascade_righteye_2splits.xml'
 
 # Recognition Data
-facerecAlgorithm = "FaceRecognizer.Fisherfaces"
+facerecAlgorithm = "FaceRecognizer.Eigenfaces"
 
 # Desired face dimensions. getPreprocessedFace() will return a square face
 faceWidth = 70
@@ -60,7 +60,11 @@ mDebug = False
 runType = TYPE.VIDEO
 
 
-
+def myPrint(obj, flag=False):
+    global mDebug
+    if mDebug or flag:
+        print obj 
+    
 def run():
     faceCascade, eyeCascade1, eyeCascade2 = initDetectors()
     
@@ -115,51 +119,50 @@ def initWebcam():
 def doStuff(src, faceCascade, eyeCascade1, eyeCascade2, oldPreprocessedFace):
     # Run the face recognition system on the src image. 
     # It will draw some things onto the given image, so make sure it is not read-only memory!
-    global mMode
+    global mMode, mDebug
     identity = -1
     mTime = time.time()
     # Find face and preprocess it to have a standard size, contrast and brightness
     preprocessedFace, faceRect, leftEye, rightEye, searchedLeftEye, searchedRightEye = getPreprocessedFace(src, faceWidth, faceCascade, eyeCascade1, eyeCascade2, preprocessLeftAndRightSeparately)
-    print "0000000000000000000000000000000000000000000000000000"
-    print preprocessedFace
-    print "0000000000000000000000000000000000000000000000000000"
-    print faceRect
-    print "0000000000000000000000000000000000000000000000000000"
-    print leftEye
-    print "0000000000000000000000000000000000000000000000000000"
-    print rightEye
-    print "0000000000000000000000000000000000000000000000000000"
-    print searchedLeftEye
-    print "0000000000000000000000000000000000000000000000000000"
-    print searchedRightEye
-    print "1111111111111111111111111111111111111111111111111111"
-    
+    myPrint ("000000000000perprocessedface0000000000000000000000000000000000000000")
+    myPrint (preprocessedFace)
+    myPrint ("000000000000facerect0000000000000000000000000000000000000000")
+    myPrint (faceRect)
+    myPrint ("0000000000000lefteye000000000000000000000000000000000000000")
+    myPrint (leftEye)
+    myPrint ("0000000000000righteye000000000000000000000000000000000000000")
+    myPrint (rightEye)
+    myPrint ("0000000000000searchedlefteye000000000000000000000000000000000000000")
+    myPrint (searchedLeftEye)
+    myPrint ("0000000000000searchedrighteye000000000000000000000000000000000000000")
+    myPrint (searchedRightEye)
+    myPrint ("1111111111111111111111111111111111111111111111111111")
+        
     gotFaceAndEyes = False
     if preprocessedFace is not None:
         gotFaceAndEyes = True
         
     # Draw an anti-aliased rectangle around the detected face
     if faceRect is not None and len(faceRect) > 0:
-        print faceRect
+        myPrint (faceRect)
         
-        cv2.rectangle(src, (faceRect[0], faceRect[1]), (faceRect[2], faceRect[3]), (255,255,0), 2, cv2.cv.CV_AA) # Check faceRect data
+        cv2.rectangle(src, (faceRect[0], faceRect[1]), (faceRect[0] + faceRect[2], faceRect[1] + faceRect[3]), (0,255,255), 2, cv2.cv.CV_AA) # Check faceRect data
         
         eyeColor = cv2.cv.CV_RGB(0,255,255)
         
-        print "Check circle function for python"
         if leftEye[0] >= 0:
-            print leftEye
+            myPrint (leftEye)
             leftEyeCenterX = cv2.cv.Round(faceRect[0]+leftEye[0])
-            leftEyeCenterY = cv2.cv.Round(faceRect[1]+leftEye[1])
-#             leftEyeCenterX = cv2.cv.Round((leftEye[0] + leftEye[2])/2.0)
-#             leftEyeCenterY = cv2.cv.Round((leftEye[1] + leftEye[3])/2.0)
+            leftEyeCenterY = cv2.cv.Round(faceRect[1]+leftEye[1] + 9)
+#             leftEyeCenterX = cv2.cv.Round((leftEye[0] + faceRect[2])/2.0)
+#             leftEyeCenterY = cv2.cv.Round((leftEye[1] + faceRect[3])/2.0)
             radius = 6
             cv2.circle(src, (leftEyeCenterX, leftEyeCenterY), radius, (200,200,0)) # Check circle for python
         if rightEye[0] >= 0:
             rightEyeCenterX = cv2.cv.Round(faceRect[0]+rightEye[0])
-            rightEyeCenterY = cv2.cv.Round(faceRect[1]+rightEye[1])
-#             rightEyeCenterX = cv2.cv.Round((rightEye[0] + rightEye[2])/2.0)
-#             rightEyeCenterY = cv2.cv.Round((rightEye[1] + rightEye[3])/2.0)
+            rightEyeCenterY = cv2.cv.Round(faceRect[1]+rightEye[1] + 9)
+#             rightEyeCenterX = cv2.cv.Round((rightEye[0] + faceRect[2])/2.0)
+#             rightEyeCenterY = cv2.cv.Round((rightEye[1] + faceRect[3])/2.0)
             radius = 6
             cv2.circle(src, (rightEyeCenterX, rightEyeCenterY), radius, (200,200,0)) # Check circle for python
             
@@ -171,9 +174,10 @@ def doStuff(src, faceCascade, eyeCascade1, eyeCascade2, oldPreprocessedFace):
             if gotFaceAndEyes:
                 # Check if this face looks somewhat different from the previously collected face
                 imageDiff = 10000000000.0
-                if oldPreprocessedFace:
+                if oldPreprocessedFace is not None:
                     imageDiff = getSimilarity(preprocessedFace, oldPreprocessedFace)
                 
+                myPrint("Image Diff = {}".format(imageDiff), True)
                 # Also record when it happened 
                 currentTime = time.time()
                 timeDiff = currentTime - mTime
@@ -185,8 +189,8 @@ def doStuff(src, faceCascade, eyeCascade1, eyeCascade2, oldPreprocessedFace):
                     
                     preprocessedFaces.append(preprocessedFace)
                     preprocessedFaces.append(mirroredFace)
-                    faceLabels.append("")
-                    faceLabels.append("")
+                    faceLabels.append("1")
+                    faceLabels.append("1")
                     
                     # Keep a reference to the latest face of each person
                     '''
@@ -203,6 +207,7 @@ def doStuff(src, faceCascade, eyeCascade1, eyeCascade2, oldPreprocessedFace):
                     
                     # Keep a copy of the processed face, to compare on next iteration
                     mTime = time.time()
+                    
                     return preprocessedFace
                     
                     
@@ -233,7 +238,7 @@ def doStuff(src, faceCascade, eyeCascade1, eyeCascade2, oldPreprocessedFace):
         elif mMode == MODE.RECOGNITION:
             if gotFaceAndEyes and len(preprocessedFaces) > 0 and len(preprocessedFaces) == len(faceLabels):
                 reconstructedFace = reconstructFace(model, preprocessedFace)
-                if mDebug:
+                if mDebug or True:
                     if len(reconstructedFace) > 0:
                         cv2.imshow("reconstructedFace", reconstructedFace)
                         
@@ -284,6 +289,7 @@ def recognizeAndTrain(src, faceCascade, eyeCascade1, eyeCascade2):
     oldPreprocessedFace = None
     oldTime = 0
     # Start in detection mode
+    global mMode
     mMode = MODE.DETECTION
     cam = cv2.VideoCapture(0)
     
@@ -301,6 +307,18 @@ def recognizeAndTrain(src, faceCascade, eyeCascade1, eyeCascade2):
                 cam.release()
                 cv2.destroyAllWindows()
                 break
+            if cv2.waitKey(1) & 0xFF == ord('a'):
+                myPrint("Changed MODE to Detection", True)
+                mMode = MODE.DETECTION
+            if cv2.waitKey(1) & 0xFF == ord('s'):
+                myPrint("Changed MODE to Collect Faces", True)
+                mMode = MODE.COLLECT_FACES
+            if cv2.waitKey(1) & 0xFF == ord('d'):
+                myPrint("Changed MODE to Training", True)
+                mMode = MODE.TRAINING
+            if cv2.waitKey(1) & 0xFF == ord('f'):
+                myPrint("Changed MODE to Recognition", True)
+                mMode = MODE.RECOGNITION    
             
         
 run()
