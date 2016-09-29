@@ -269,7 +269,7 @@ def getPreprocessedFace(srcImg, desiredFaceWidth, faceCascade, eyeCascade1, eyeC
         
         #Check if both eyes were detected
         if (leftEye is not None) and (rightEye is not None) and leftEye[0] >= 0 and rightEye[0] >= 0:
-            myPrint ("--------- BOTH EYES WERE DETECTED----------")
+            myPrint ("--------- BOTH EYES WERE DETECTED----------", True)
             # Make the face image the same size as the training images
             
             eyesCenter = ((storeLeftEye[0]+storeRightEye[0]) / 2.0, (storeLeftEye[1] + storeRightEye[1]) / 2.0)

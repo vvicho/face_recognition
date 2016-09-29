@@ -17,20 +17,21 @@ start_time = time.time()
 
 # Directory paths
 haarcascades_path = '/home/daniel/opencv/data/haarcascades/'
-FACE_LIBRARY = '/home/daniel/Downloads/Images/Daniel/test/'             
+# FACE_LIBRARY = '/home/daniel/Downloads/Images/Daniel/test/'
+FACE_LIBRARY = '/home/daniel/Desktop/Pics/Daniel/'             
                  
 # Number of photos configuration
 people = -1
 pic_per_person = -1 # -set to -1 to bring all photos from a person
 
 # Face Detection coniguration
-scale_factor = 1.05
-num_neighbors = 3
+scale_factor = 1.3
+num_neighbors = 5
 
 # other configurations
 print_photos = True
 write_log = True
-resize = True 
+resize = False 
 
 draw_eyes = 1
 
@@ -44,7 +45,8 @@ fullbody_cascade = cv2.CascadeClassifier(haarcascades_path + 'haarcascade_fullbo
 
 
 def detect(filename=None, folder=None, num_of_people=people, num_of_pics=pic_per_person):
-    path = FACE_LIBRARY + 'IMG_20160619_152455(dif).jpg'
+#     path = FACE_LIBRARY + 'IMG_20160619_152455(dif).jpg'
+    path = FACE_LIBRARY + 'beard.jpg'
     img = cv2.imread(path)
     face_array = []
     
@@ -89,17 +91,17 @@ def detect(filename=None, folder=None, num_of_people=people, num_of_pics=pic_per
 #             bodies = fullbody_cascade.detectMultiScale(roi_gray)
             
             #Paint both eyes
-            if draw_eyes == 0 :
+            if draw_eyes == 1 :
                 for(ex, ey, ew, eh) in eyes:
-                    cv2.rectangle(roi_color, (ex, ey), (ex+ew, ey+eh), (0,255,255),2)
+                    cv2.rectangle(roi_color, (ex, ey), (ex+ew, ey+eh), (255,255,255),2)
             #Paint left eyes
             elif draw_eyes == 1:
                 for(ex, ey, ew, eh) in left_eyes:
-                    cv2.rectangle(roi_color, (ex, ey), (ex+ew, ey+eh), (0,255,0),2)
+                    cv2.rectangle(roi_color, (ex, ey), (ex+ew, ey+eh), (255,255,255),2)
             #Paint right eyes
-            else:
+            elif draw_eyes == 1:
                 for(ex, ey, ew, eh) in right_eyes:
-                    cv2.rectangle(roi_color, (ex, ey), (ex+ew, ey+eh), (0,0,255),2)
+                    cv2.rectangle(roi_color, (ex, ey), (ex+ew, ey+eh), (255,255,255),2)
             
             print("Eyes : {0}".format(len(eyes)))
             print("Left eyes : {0}".format(len(left_eyes)))
@@ -108,7 +110,7 @@ def detect(filename=None, folder=None, num_of_people=people, num_of_pics=pic_per
             
         total_time = time.time() - start_time  
         print("----- %s seconds ----" %total_time)
-        cv2.imshow('Photo', img)
+        cv2.imshow('Photo', res)
         print('face fotos ' + str(len(face_array)))
 #         for n, photo in enumerate(face_array):
 #             print()

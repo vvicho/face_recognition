@@ -39,6 +39,8 @@ def learnCollectedFaces(preprocessedFaces, faceLabels, facerecAlgorithm):
     else:
         recognizer = cv2.createLBPHFaceRecognizer()
     
+    faceLabels = np.array(faceLabels)
+    print faceLabels
     recognizer.train(preprocessedFaces, faceLabels)
     
     return recognizer

@@ -10,6 +10,7 @@ import time
 import numpy as np
 from face.detection.PreprocessImage import getPreprocessedFace
 from face.recognition.Recognition import getSimilarity, learnCollectedFaces, reconstructFace
+import utils.CSVutils as csv
 
 #Enums to define states
 class TYPE:
@@ -57,7 +58,9 @@ mNumPersons = 0
 mLatestFaces = []
 mDebug = False
 
-runType = TYPE.VIDEO
+runType = TYPE.PICTURE
+
+testPicPath = '/home/daniel/Desktop/Pics/'
 
 
 def myPrint(obj, flag=False):
@@ -284,6 +287,74 @@ def doStuff(src, faceCascade, eyeCascade1, eyeCascade2, oldPreprocessedFace):
             
     return None
 
+def collectAndDetectFaces(faceCascade, eyeCascade1, eyeCascade2):
+    pic, label = csv.getPhotoAndLabel('/home/daniel/Desktop/Pics/data.csv', )
+    global mMode,mDebug, preprocessLeftAndRightSeparately, preprocessedFaces, faceLabels, mNumPersons
+    for i in range(len(pic)):
+        print pic[i]
+        img = cv2.imread(pic[i])
+        
+        preprocessedFace, faceRect, leftEye, rightEye, searchedLeftEye, searchedRightEye = getPreprocessedFace(img, faceWidth, faceCascade, eyeCascade1, eyeCascade2, preprocessLeftAndRightSeparately)
+        
+        if preprocessedFace is not None and len(preprocessedFace) > 0:
+            cv2.rectangle(img, (faceRect[0], faceRect[1]), (faceRect[0] + faceRect[2], faceRect[1] + faceRect[3]), (0,255,255), 2, cv2.cv.CV_AA) # Check faceRect data
+            myPrint(preprocessedFace, True)
+        
+            eyeColor = cv2.cv.CV_RGB(0,255,255)
+            '''
+            -------------------------------------------------------------------
+            '''
+            radius = 6
+
+            if leftEye is not None and leftEye[0] >= 0:
+                myPrint (leftEye)
+                leftEyeCenterX = cv2.cv.Round(faceRect[0]+leftEye[0])
+                leftEyeCenterY = cv2.cv.Round(faceRect[1]+leftEye[1] + 9)
+                cv2.circle(img, (leftEyeCenterX, leftEyeCenterY), radius, (200,200,0)) # Check circle for python
+            if rightEye is not None and  rightEye[0] >= 0:
+                rightEyeCenterX = cv2.cv.Round(faceRect[0]+rightEye[0])
+                rightEyeCenterY = cv2.cv.Round(faceRect[1]+rightEye[1] + 9)
+                cv2.circle(img, (rightEyeCenterX, rightEyeCenterY), radius, (200,200,0)) # Check circle for python
+                
+            cv2.imshow('{} - {}'.format(label[i], i),img)
+            mirroredFace = cv2.flip(preprocessedFace, 1)
+            preprocessedFaces.append(preprocessedFace)
+            preprocessedFaces.append(mirroredFace)
+            faceLabels.append(label[i])
+            faceLabels.append(label[i])
+        '''
+        -------------------------------------------------------------------
+        '''    
+            
+        
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    print "preprocessedFaces = {}".format(len(preprocessedFaces))
+    mNumPersons = len(np.unique(faceLabels))
+    print faceLabels
+
+def trainNetwork():
+    global preprocessedFaces, faceLabels, facerecAlgorithm, mNumPersons
+    haveEnoughData = True
+    
+    if facerecAlgorithm == "FaceRecognizer.Fisherfaces":
+        if mNumPersons < 2 or mNumPersons == 2 and mLatestFaces[1] < 0:
+            print "Warning: Fisherfaces needs at least 2 people, otherwise there is nothing to differentiate! Collect more data."
+            haveEnoughData = False
+    
+    if mNumPersons < 1 or len(preprocessedFaces) <= 0 or len(preprocessedFaces) != len(faceLabels):
+        print "Warning: Need some training data before it can be learnt! Collect more data."
+        haveEnoughData = False
+        
+    if haveEnoughData:
+        model = learnCollectedFaces(preprocessedFaces, faceLabels, facerecAlgorithm)
+        print model
+        
+#         if mDebug:
+#                     showTrainingDebugData(model, faceWidth, faceHeight)
+        
+    pass
+
 def recognizeAndTrain(src, faceCascade, eyeCascade1, eyeCascade2):
     
     oldPreprocessedFace = None
@@ -295,7 +366,13 @@ def recognizeAndTrain(src, faceCascade, eyeCascade1, eyeCascade2):
     
     if runType == TYPE.PICTURE:
         # Run once for pictures
-        doStuff(src, faceCascade, eyeCascade1, eyeCascade2)
+        # read csv file
+        collectAndDetectFaces(faceCascade, eyeCascade1, eyeCascade2)
+        trainNetwork()
+        # get preprocessed faces
+        # store in global variables
+        # train, recognize
+#         doStuff(src, faceCascade, eyeCascade1, eyeCascade2)
     else:
         # Run forever until user hits esc in case it is video 
         while True:

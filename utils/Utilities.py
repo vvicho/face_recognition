@@ -11,6 +11,7 @@ import cv2
 import glob
 
 
+
 def myPrint(obj, flag=False):
     global mDebug
     if mDebug or flag:

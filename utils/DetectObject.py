@@ -58,7 +58,7 @@ def detectObjectsCustom(img, cascade, scaleWidth, flags, minFeatureSize, searchS
     if len(img) > scaleWidth:
         # Shrink image to run faster
         scaleHeight = cv2.cv.Round(len(img) / scale )
-        myPrint(scaleWidth, scaleHeight)
+        myPrint((scaleWidth, scaleHeight), False )
         inputImg = cv2.resize(gray, (scaleWidth, scaleHeight))
     else:
         # Access input image since it is already small
