@@ -328,7 +328,7 @@ def getPreprocessedFace(srcImg, desiredFaceWidth, faceCascade, eyeCascade1, eyeC
             myPrint (mask)
             faceCenter = (cv2.cv.Round(desiredFaceWidth / 2.0), cv2.cv.Round(desiredFaceHeight * FACE_ELLIPSE_CY))
             size = (cv2.cv.Round(desiredFaceWidth * FACE_ELLIPSE_W), cv2.cv.Round(desiredFaceHeight * FACE_ELLIPSE_H))
-            cv2.ellipse(filtered, (faceCenter, size, 0), (255,0,0)) 
+            cv2.ellipse(mask, (faceCenter, size, 0), (255,0,0)) 
             
             
             

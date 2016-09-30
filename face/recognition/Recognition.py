@@ -7,6 +7,7 @@ Created on Sep 23, 2016
 import numpy as np
 import cv2
 import sys
+from PIL import Image
 
 # from main import preprocessedFaces
 
@@ -42,7 +43,6 @@ def learnCollectedFaces(preprocessedFaces, faceLabels, facerecAlgorithm):
     faceLabels = np.array(faceLabels)
     print faceLabels
     recognizer.train(preprocessedFaces, faceLabels)
-    
     return recognizer
     
 '''
@@ -61,15 +61,25 @@ def showTrainingDebugData(model, faceWidth, faceHeight):
 def reconstructFace(model, preprocessedFace):
     # Since we can only reconsctruct the face for some types of FaceRecognizer models (Eigenfaces or Fisherfaces),
     # We should surround the OpenCV calls by try/except block so we don'r crash for other models.
-    try:
+#     try:
         
         # Get some required data from the FaceRecognizer model
-        eigenvectors = model.get("eigenvectors")
-        averageFaceRow = model.get("mean")
+        eigenvectors = model.getMat("eigenvectors")
+        averageFaceRow = model.getMat("mean")
         
         faceHeight = len(preprocessedFace)
-        reshapedPreprocessedFace = cv2.cv.ReshapeMatND(preprocessedFace, 1, 1)
+#         cv2.imshow('pre',preprocessedFace)
+#         cv2.waitKey()
+#         cv2.destroyAllWindows()
+#         cv2.cv.ReshapeMatND(preprocessedFace, newCn, newDims)
         
+#         reshapedPreprocessedFace = cv2.cv.Reshape(preprocessedFace, 1, 1)
+        reshapedPreprocessedFace = cv2.cv.Reshape(cv2.cv.fromarray(preprocessedFace), 1, 1)
+#         reshapedPreprocessedFace = cv2.cv.fromarray(preprocessedFace)
+        
+#         print "bla"
+#         print reshapedPreprocessedFace
+         
         # Project the input image onto the PCA subspace
         projection = subspaceProject(eigenvectors, averageFaceRow, reshapedPreprocessedFace)
         # printMatInfo = (projection, 'projection')
@@ -86,18 +96,27 @@ def reconstructFace(model, preprocessedFace):
         reconstructionMat = cv2.cv.Reshape(reconstructionRow, 1, faceHeight)
         # Convert the floating-point pixels to regular 8-bit unchar pixels
         reconstructedFace = np.uint8(reconstructionMat)
+#         print 'reconstructed'
+#         print reconstructedFace
+        cv2.imshow('reconstructed', reconstructedFace)
+        cv2.waitKey()
+        cv2.destroyAllWindows()
         
         return reconstructedFace
         
-    except Exception as e:
-        print e.__str__()
-        return np.array()
+#     except Exception as e:
+#         raise Exception(e)
+#         print "Error in reconstruct Face {}".format(sys.exc_info()[-1])
+#         print e.__str__()
+#         return None
     
     
 '''
  Compare two images by getting the L2 error (square-root of sum of squared error).
 '''
 def getSimilarity(a,b):
+    if a is None or b is None:
+        return 10000000.0
     rowsA = len(a)
     rowsB = len(b)
     
@@ -124,16 +143,24 @@ def getSimilarity(a,b):
 '''
 # projects samples into the LDA subspace
 def subspaceProject(eigenvectors_column, mean, source):
-    source_rows = len(source)
-    source_cols = len(source[0])
+    source_rows = source.rows
+    source_cols = source.cols
 
     if len(eigenvectors_column) != source_cols * source_rows:
         raise Exception("wrong shape")
 
     flattened_source = []
-    for row in source:
-        flattened_source += [float(num) for num in row]
-    flattened_source = np.asarray(flattened_source)
+    
+    for i in range(source_cols):
+        for j in range(source_rows):
+            flattened_source.append(source[j, i])
+        
+#         flattened_source += [float(num) for num in row]
+#     for row in source:
+#         flattened_source += [float(num) for num in row]
+    flattened_source = np.array([np.asarray(flattened_source)])
+#     flattened_source = (1,flattened_source)
+    
     delta_from_mean = cv2.subtract(flattened_source, mean)
     # flatten the matrix then convert to 1 row by many columns
     delta_from_mean = np.asarray([np.hstack(delta_from_mean)])
@@ -152,7 +179,7 @@ def subspaceReconstruct(eigenvectors_column, mean, projection, image_width, imag
     # GEMM_2_T transposes the eigenvector
     result = cv2.gemm(projection, eigenvectors_column, 1.0, empty_mat, 0.0, flags=cv2.GEMM_2_T)
 
-    flattened_array = result[0]
+    flattened_array = np.array([np.asarray(result[0])])
     flattened_image = np.hstack(cv2.add(flattened_array, mean))
     flattened_image = np.asarray([np.uint8(num) for num in flattened_image])
     all_rows = []

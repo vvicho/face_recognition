@@ -26,7 +26,7 @@ eyeCascade1File = haarCascadesPath + 'haarcascade_lefteye_2splits.xml'
 eyeCascade2File = haarCascadesPath + 'haarcascade_righteye_2splits.xml'
 
 # Recognition Data
-facerecAlgorithm = "FaceRecognizer.Eigenfaces"
+facerecAlgorithm = "Eigenfaces"
 
 # Desired face dimensions. getPreprocessedFace() will return a square face
 faceWidth = 70
@@ -60,7 +60,7 @@ mDebug = False
 
 runType = TYPE.PICTURE
 
-testPicPath = '/home/daniel/Desktop/Pics/'
+testPicPath = '/home/daniel/Desktop/Pics/Training/'
 
 
 def myPrint(obj, flag=False):
@@ -288,7 +288,7 @@ def doStuff(src, faceCascade, eyeCascade1, eyeCascade2, oldPreprocessedFace):
     return None
 
 def collectAndDetectFaces(faceCascade, eyeCascade1, eyeCascade2):
-    pic, label = csv.getPhotoAndLabel('/home/daniel/Desktop/Pics/data.csv', )
+    pic, label = csv.getPhotoAndLabel('/home/daniel/Desktop/Pics/Training/data.csv', )
     global mMode,mDebug, preprocessLeftAndRightSeparately, preprocessedFaces, faceLabels, mNumPersons
     for i in range(len(pic)):
         print pic[i]
@@ -348,12 +348,56 @@ def trainNetwork():
         
     if haveEnoughData:
         model = learnCollectedFaces(preprocessedFaces, faceLabels, facerecAlgorithm)
-        print model
+        return model
         
 #         if mDebug:
 #                     showTrainingDebugData(model, faceWidth, faceHeight)
         
     pass
+
+def recognize(src, model, faceCascade, eyeCascade1, eyeCascade2):
+    img = cv2.imread(src)
+    preprocessedFace, faceRect, leftEye, rightEye, searchedLeftEye, searchedRightEye = getPreprocessedFace(img, faceWidth, faceCascade, eyeCascade1, eyeCascade2, preprocessLeftAndRightSeparately)
+    gotFaceAndEyes = False
+    if faceRect is not None:
+        gotFaceAndEyes=True
+    if gotFaceAndEyes and len(preprocessedFaces) > 0 and len(preprocessedFaces) == len(faceLabels):
+        reconstructedFace = reconstructFace(model, preprocessedFace)
+        if mDebug or True:
+            if reconstructedFace is not None and len(reconstructedFace) > 0:
+                cv2.imshow("reconstructedFace", reconstructedFace)
+                
+        # Verify whether the reconstructed face looks like the preprocessed face, otherwise it is probably an unknown person
+        similarity = getSimilarity(preprocessedFace, reconstructedFace)
+        
+        
+        if(similarity < UNKNOWN_PERSON_THRESHOLD):
+            # Identify who the person is in the preprocessed face image.
+            identity = model.predict(preprocessedFace)
+            outStr = str(identity) 
+        else:
+            # Since the confidence is low, assume it is an unknown person
+            outStr = "Unknown"
+        
+        print "Identity: {0}. Similarity: {1}".format(outStr, similarity)
+        
+        #Show the confidence rating for the recognition in the mid-top of the display
+        cx = (len(img[0]) - faceWidth) / 2
+        ptBottomRight = (cx - 5, BORDER + faceHeight)
+        ptTopLeft = (cx - 15, BORDER)
+        # Draw a gray line showing the threshold for an "unknown" person
+        ptThreshold = (ptTopLeft[0], ptBottomRight[1] - cv2.cv.Round((1.0 - UNKNOWN_PERSON_THRESHOLD) * faceHeight))
+        print ptThreshold, ptBottomRight[0]
+        cv2.rectangle(img, ptThreshold, (ptBottomRight[0], ptThreshold[1]), cv2.cv.CV_RGB(200,200,200), 1, cv2.CV_AA)
+        # Crop the confidence rating between 0.0 to 1.0, to show in the bar.
+        confidenceRatio =  1.0 - min(max(similarity, 0.0), 1.0)
+        ptConfdence = (ptTopLeft[0], cv2.cv.Round(ptBottomRight[1] - confidenceRatio * faceHeight))
+        print ptBottomRight, ptConfdence
+        # Show the light-blue confidence bar
+        cv2.rectangle(img, ptConfdence, ptBottomRight, cv2.cv.CV_RGB(0,255,255), cv2.cv.CV_FILLED, cv2.CV_AA)
+        # Show the gray border of the bar
+        cv2.rectangle(img, ptTopLeft, ptBottomRight, cv2.cv.CV_RGB(200,200,200), 1, cv2.CV_AA)
+        cv2.imshow('recognized face', img)
 
 def recognizeAndTrain(src, faceCascade, eyeCascade1, eyeCascade2):
     
@@ -368,7 +412,8 @@ def recognizeAndTrain(src, faceCascade, eyeCascade1, eyeCascade2):
         # Run once for pictures
         # read csv file
         collectAndDetectFaces(faceCascade, eyeCascade1, eyeCascade2)
-        trainNetwork()
+        model = trainNetwork()
+        recognize('/home/daniel/Desktop/Pics/Sample/1/2016-07-27-140230.jpg', model, faceCascade, eyeCascade1, eyeCascade2)
         # get preprocessed faces
         # store in global variables
         # train, recognize
