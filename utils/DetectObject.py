@@ -130,7 +130,7 @@ def detectLargestObject(img, cascade, scaleWidth, details):
         largestObject = objects[0]
     else:
         largestObject = None
-        print("No object found in " + details)
+        myPrint("No object found in " + details)
     
     return largestObject
 

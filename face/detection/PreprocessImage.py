@@ -17,6 +17,8 @@ FACE_ELLIPSE_CY = 0.40
 FACE_ELLIPSE_W = 0.50
 FACE_ELLIPSE_H = 0.80
 
+showImg = False
+
 mDebug = False
 
 def myPrint(obj, flag=False):
@@ -67,8 +69,8 @@ def detectBothEyes(face, eye_cascade1, eye_cascade2, searched_left_eye, searched
     myPrint (cols)
     myPrint ("Start")
     myPrint (topLeftOfFace)
-    cv2.imshow('top left of face', topLeftOfFace)
-    cv2.imshow('top right of face', topRightOfFace)
+    if showImg: cv2.imshow('top left of face', topLeftOfFace)
+    if showImg: cv2.imshow('top right of face', topRightOfFace)
     leftEyeRect = detectLargestObject(topLeftOfFace, eye_cascade1, len(topLeftOfFace[0]), "detectBothEyes - cascade1 - leftEye")
     rightEyeRect = detectLargestObject(topRightOfFace, eye_cascade1,len(topRightOfFace[0]), "detectBothEyes - cascade1 - rightEye")
     myPrint ("end")
@@ -229,7 +231,7 @@ def getPreprocessedFace(srcImg, desiredFaceWidth, faceCascade, eyeCascade1, eyeC
         else :
             gray = faceImg 
 
-        cv2.imshow('gray',gray)
+        if showImg: cv2.imshow('gray',gray)
         # Search for the 2 eyes at the full resolution, since eye detection needs max resolution possible
         # leftEye, rightEye = None, None
         
@@ -262,14 +264,14 @@ def getPreprocessedFace(srcImg, desiredFaceWidth, faceCascade, eyeCascade1, eyeC
 #         rightEyeCenterX = cv2.cv.Round((2*searchedRightEye[0] + searchedRightEye[2]) / 2.0)
 #         rightEyeCenterY = cv2.cv.Round((2*searchedRightEye[1] + searchedRightEye[3]) / 2.0)
 #         cv2.circle(gray, (rightEyeCenterX, rightEyeCenterY), radius, (200,200,0)) # Check circle for python
-#         cv2.imshow('gray',gray)      
+#         if showImg: cv2.imshow('gray',gray)      
 
         ##########################
         
         
         #Check if both eyes were detected
         if (leftEye is not None) and (rightEye is not None) and leftEye[0] >= 0 and rightEye[0] >= 0:
-            myPrint ("--------- BOTH EYES WERE DETECTED----------", True)
+            myPrint ("--------- BOTH EYES WERE DETECTED----------")
             # Make the face image the same size as the training images
             
             eyesCenter = ((storeLeftEye[0]+storeRightEye[0]) / 2.0, (storeLeftEye[1] + storeRightEye[1]) / 2.0)
@@ -300,7 +302,7 @@ def getPreprocessedFace(srcImg, desiredFaceWidth, faceCascade, eyeCascade1, eyeC
 #             warped = np.array(desiredFaceHeight, desiredFaceWidth, cv2.CV_8U, cv2.cv.Scalar(128))
             warped = cv2.warpAffine(gray, rot_mat, (desiredFaceWidth, desiredFaceHeight))
             
-            cv2.imshow('warped', warped)
+            if showImg: cv2.imshow('warped', warped)
             
             # Give the image a standard brightness and contrast in case it was too dark or had low contrast.
             if not doLeftAndRightSeparately:
@@ -310,14 +312,14 @@ def getPreprocessedFace(srcImg, desiredFaceWidth, faceCascade, eyeCascade1, eyeC
                 # Do it separately for the left and right sides of the face
                 equalizeLeftAndRightHalves(warped)
                 
-            cv2.imshow('equalized', warped)
+            if showImg: cv2.imshow('equalized', warped)
             myPrint ("equalized")
             myPrint (warped)
             
             #Use the bilateral filter to reduce pixel noise by smoothing the image, but keeping the sharp edges in the face
 #             filtered = np.array(warped.shape[0:1], cv2.CV_8U)
             filtered = cv2.bilateralFilter(warped, 0, 20.0, 2.0)
-            cv2.imshow('filtered', filtered)
+            if showImg: cv2.imshow('filtered', filtered)
             
             #Filter out the corners of the face, since we mainly just care about the middle parts.
             # Draw a filled ellipse in the middle of the face-sized image
@@ -332,7 +334,7 @@ def getPreprocessedFace(srcImg, desiredFaceWidth, faceCascade, eyeCascade1, eyeC
             
             
             
-            cv2.imshow('mask', mask) 
+            if showImg: cv2.imshow('mask', mask) 
             
             dstImg = np.zeros(warped.shape[0:2])
             dstImg= filtered.copy()
@@ -340,7 +342,7 @@ def getPreprocessedFace(srcImg, desiredFaceWidth, faceCascade, eyeCascade1, eyeC
             myPrint (dstImg)
 #             cv2.cv.Copy(filtered, dstImg, mask)
             
-            cv2.imshow('dstImg', dstImg)
+            if showImg: cv2.imshow('dstImg', dstImg)
             
             return dstImg, faceRect, storeLeftEye, storeRightEye, searchedLeftEye, searchedRightEye
             

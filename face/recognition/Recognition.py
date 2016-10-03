@@ -11,7 +11,7 @@ from PIL import Image
 
 # from main import preprocessedFaces
 
-
+showImg = False
 
 '''
 Start training from the collected faces.
@@ -41,7 +41,7 @@ def learnCollectedFaces(preprocessedFaces, faceLabels, facerecAlgorithm):
         recognizer = cv2.createLBPHFaceRecognizer()
     
     faceLabels = np.array(faceLabels)
-    print faceLabels
+    print np.unique(faceLabels)
     recognizer.train(preprocessedFaces, faceLabels)
     return recognizer
     
@@ -98,9 +98,10 @@ def reconstructFace(model, preprocessedFace):
         reconstructedFace = np.uint8(reconstructionMat)
 #         print 'reconstructed'
 #         print reconstructedFace
-        cv2.imshow('reconstructed', reconstructedFace)
-        cv2.waitKey()
-        cv2.destroyAllWindows()
+        if showImg:
+            cv2.imshow('reconstructed', reconstructedFace)
+            cv2.waitKey()
+            cv2.destroyAllWindows()
         
         return reconstructedFace
         
