@@ -21,7 +21,7 @@ The face recognition algorithm can be one of these and perhaps more, depending o
    "FaceRecognizer.LBPH":        Local Binary Pattern Histograms (Ahonen et al, 2006).
 
 '''
-def learnCollectedFaces(preprocessedFaces, faceLabels, facerecAlgorithm):
+def learnCollectedFaces(preprocessedFaces, faceLabels, facerecAlgorithm, recognizer):
     print "Learning the collected faces using the {0} algorithm...".format(facerecAlgorithm)
     
     # Make sure the "contrib" module is dynamically loaded at runtime
@@ -33,6 +33,8 @@ def learnCollectedFaces(preprocessedFaces, faceLabels, facerecAlgorithm):
 #         sys.exit()
 
     # create recognizer depending on the defined algorithm
+    faceLabels = np.array(faceLabels)
+    
     if facerecAlgorithm == 'Fisherfaces':
         recognizer = cv2.createFisherFaceRecognizer()
     elif facerecAlgorithm == 'Eigenfaces':
@@ -40,7 +42,7 @@ def learnCollectedFaces(preprocessedFaces, faceLabels, facerecAlgorithm):
     else:
         recognizer = cv2.createLBPHFaceRecognizer()
     
-    faceLabels = np.array(faceLabels)
+#     faceLabels = np.array(faceLabels)
     print np.unique(faceLabels)
     recognizer.train(preprocessedFaces, faceLabels)
     return recognizer
@@ -61,7 +63,7 @@ def showTrainingDebugData(model, faceWidth, faceHeight):
 def reconstructFace(model, preprocessedFace):
     # Since we can only reconsctruct the face for some types of FaceRecognizer models (Eigenfaces or Fisherfaces),
     # We should surround the OpenCV calls by try/except block so we don'r crash for other models.
-#     try:
+    try:
         
         # Get some required data from the FaceRecognizer model
         eigenvectors = model.getMat("eigenvectors")
@@ -105,11 +107,11 @@ def reconstructFace(model, preprocessedFace):
         
         return reconstructedFace
         
-#     except Exception as e:
+    except Exception as e:
 #         raise Exception(e)
-#         print "Error in reconstruct Face {}".format(sys.exc_info()[-1])
-#         print e.__str__()
-#         return None
+        print "Error in Recognition.reconstructFace()  {}".format(sys.exc_info()[-1])
+        print e.__str__()
+        return None
     
     
 '''

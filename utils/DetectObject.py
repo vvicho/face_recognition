@@ -37,7 +37,7 @@ def drawFaceOutline(img, x,y,w,h, scale):
     Input is temporarily shrunk to 'scaleWidth' for faster detection, since 200 is enough to find faces
     Returns
 '''
-def detectObjectsCustom(img, cascade, scaleWidth, flags, minFeatureSize, searchScaleFactor, minNeighbors, firstDetection, details):
+def detectObjectsCustom(img, cascade, scaleWidth, flags, minFeatureSize, searchScaleFactor, minNeighbors, firstDetection, details, paintContour=False):
     if img is None:
         print "img is None"
         return None
@@ -77,6 +77,8 @@ def detectObjectsCustom(img, cascade, scaleWidth, flags, minFeatureSize, searchS
     myPrint('Cascade')
     myPrint(type(objects))
     myPrint(objects)
+    
+    drawFaceRectangles = paintContour
     
     if drawFaceRectangles:
         for (x,y,w,h) in objects:

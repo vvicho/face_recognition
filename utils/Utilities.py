@@ -12,6 +12,7 @@ import glob
 
 
 
+
 def myPrint(obj, flag=False):
     global mDebug
     if mDebug or flag:
@@ -193,3 +194,36 @@ def resize_img(img, longest_side=500.):
     print(factorX, factorY)
     res = cv2.resize(img, (factorX, factorY))
     return res
+
+
+# Calculate the center of the face. if this has moved enough, update the position of the frame
+def faceCenterChanged(frame, prevFaceRect, faceRect):
+    MAX_DIFF = 4
+    if faceRect is None:
+        return True
+    if prevFaceRect is None:
+        return True 
+    
+    frameWidth, faceHeight = frame
+    
+    faceCenterX = (faceRect[0] + faceRect[2]) / 2.0 
+    faceCenterY = (faceRect[1] + faceRect[3]) / 2.0
+    
+    prevFaceCenterX = (prevFaceRect[0] + prevFaceRect[2]) / 2.0 
+    prevFaceCenterY = (prevFaceRect[1] + prevFaceRect[3]) / 2.0
+    
+    if abs(faceCenterX  - prevFaceCenterX) < frameWidth / 6 and abs(faceCenterY - prevFaceCenterY) < faceHeight / 6:
+        if(abs(faceCenterX - prevFaceCenterX) < MAX_DIFF) and abs(faceCenterY - prevFaceCenterY) < MAX_DIFF:
+            return False 
+    
+    return True
+
+# Get next number to store pictures and get identifier
+def getNextLabelNumber(dic):
+    return max(dic.keys()) 
+
+# Create a new directory to store photos
+def createNewFolder(filePath, key, name):
+    command = "mkdir -p {}{}.{}".format(filePath, key, name)
+    os.system(command)
+

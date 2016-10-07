@@ -3,7 +3,6 @@ Created on Sep 21, 2016
 
 @author: daniel
 '''
-
 import cv2
 import sys
 import time
@@ -11,8 +10,17 @@ import numpy as np
 from face.detection.PreprocessImage import getPreprocessedFace
 from face.recognition.Recognition import getSimilarity, learnCollectedFaces, reconstructFace
 import utils.CSVutils as csv
+from utils.CSVutils import getNameTranslation, updateCSVFile
+import Tkinter
+from gui import PopupWindow
+from multiprocessing.pool import ThreadPool
+from utils.Utilities import faceCenterChanged, createNewFolder,\
+    getNextLabelNumber
 
-nameArr = [(0, "Other"), (1, "Daniel"), (2, "Felicia"), (3,"Haruka"), (4, "Pao"), (5, "Rubi")]
+
+
+
+# nameArr = [(0, "Other"), (1, "Daniel"), (2, "Felicia"), (3,"Haruka"), (4, "Pao"), (5, "Rubi")]
 
 #Enums to define states
 class TYPE:
@@ -43,7 +51,10 @@ BORDER = 8 # Border between the GUI elements to the edge of the image.
 
 # stacks to store the person face and name
 preprocessedFaces = []
+currentProcessedFaces = []
+currentRecognized = []
 faceLabels = []
+nameTranslations = {}
 
 # Preprocess left & right sides of the face separately in case there is stronger light in one side.
 preprocessLeftAndRightSeparately = True
@@ -62,25 +73,54 @@ mDebug = False
 mSelectedPerson = -1
 mStoreCollectedFaces = False
 model = None
+modelPath = "/home/daniel/workspace/Project/modelData.xml"
 mTrainingTime = -1
+mReadFromFiles = False
+
+# Paint options
+mFaceFrameColor = (0,255,0)
+mEyeCircleColor = (200,200,0)
+mPaintFaceFrame = True
+mPaintEyeCircle = True
+
+# previous faceRect to calculate centers and changes in position
+prevFaceRect = None
+prevLeftEye = None
+prevRightEye = None
+
+
 
 runType = TYPE.VIDEO
 
-testPicPath = '/home/daniel/Desktop/Pics/Training/'
+imgFolderPath = "/home/daniel/workspace/Project/Images/Pics/Test/"
+
+# Screen and frame details
+root = Tkinter.Tk()
+screenWidth = root.winfo_screenwidth()
+screenHeight = root.winfo_screenheight()
+camFrame = None
+ 
 
 
 def myPrint(obj, flag=False):
     global mDebug
     if mDebug or flag:
         print obj 
+
+def init():
+    global imgFolderPath, nameTranslations
+    nameTranslations = getNameTranslation(imgFolderPath)
+    updateCSVFile(imgFolderPath)
+    
     
 def run():
+    init()
     faceCascade, eyeCascade1, eyeCascade2 = initDetectors()
-    
+    print nameTranslations
     recognizeAndTrain(None, faceCascade, eyeCascade1, eyeCascade2)
     return None
     
-    
+
 '''
     Load the face and 1 or 2 eye detection XML classifiers
 '''
@@ -128,11 +168,14 @@ def initWebcam():
 def doStuff(src, faceCascade, eyeCascade1, eyeCascade2, oldPreprocessedFace):
     # Run the face recognition system on the src image. 
     # It will draw some things onto the given image, so make sure it is not read-only memory!
-    global mMode, mDebug, preprocessedFaces, faceLabels, model, mNumPersons, mLatestFaces, mSelectedPerson, mTrainingTime
+    global mMode, mDebug, preprocessedFaces, faceLabels, model, mNumPersons, mLatestFaces, mSelectedPerson, mTrainingTime, mFaceFrameColor, mPaintEyeCircle, mPaintFaceFrame, mEyeCircleColor, prevFaceRect, prevLeftEye, prevRightEye
     identity = -1
     mTime = time.time()
     # Find face and preprocess it to have a standard size, contrast and brightness
     preprocessedFace, faceRect, leftEye, rightEye, searchedLeftEye, searchedRightEye = getPreprocessedFace(src, faceWidth, faceCascade, eyeCascade1, eyeCascade2, preprocessLeftAndRightSeparately)
+    currFaceRect = faceRect
+    currLeftEye = leftEye
+    currRightEye = rightEye
     myPrint ("000000000000perprocessedface0000000000000000000000000000000000000000")
     myPrint (preprocessedFace)
     myPrint ("000000000000facerect0000000000000000000000000000000000000000")
@@ -155,25 +198,38 @@ def doStuff(src, faceCascade, eyeCascade1, eyeCascade2, oldPreprocessedFace):
     if faceRect is not None and len(faceRect) > 0:
         myPrint (faceRect)
         
-        cv2.rectangle(src, (faceRect[0], faceRect[1]), (faceRect[0] + faceRect[2], faceRect[1] + faceRect[3]), (0,255,255), 2, cv2.cv.CV_AA) # Check faceRect data
         
-        eyeColor = cv2.cv.CV_RGB(0,255,255)
+        if not faceCenterChanged(camFrame, prevFaceRect, currFaceRect):
+            currFaceRect = prevFaceRect
+            currLeftEye = prevLeftEye
+            currRightEye = prevRightEye
+            
+        if mPaintFaceFrame:
+            cv2.rectangle(src, (currFaceRect[0], currFaceRect[1]), (currFaceRect[0] + currFaceRect[2], currFaceRect[1] + currFaceRect[3]), mFaceFrameColor, 2, cv2.cv.CV_AA) # Check faceRect data
         
-        if leftEye[0] >= 0:
-            myPrint (leftEye)
-            leftEyeCenterX = cv2.cv.Round(faceRect[0]+leftEye[0])
-            leftEyeCenterY = cv2.cv.Round(faceRect[1]+leftEye[1] + 9)
-#             leftEyeCenterX = cv2.cv.Round((leftEye[0] + faceRect[2])/2.0)
-#             leftEyeCenterY = cv2.cv.Round((leftEye[1] + faceRect[3])/2.0)
-            radius = 6
-            cv2.circle(src, (leftEyeCenterX, leftEyeCenterY), radius, (200,200,0)) # Check circle for python
-        if rightEye[0] >= 0:
-            rightEyeCenterX = cv2.cv.Round(faceRect[0]+rightEye[0])
-            rightEyeCenterY = cv2.cv.Round(faceRect[1]+rightEye[1] + 9)
-#             rightEyeCenterX = cv2.cv.Round((rightEye[0] + faceRect[2])/2.0)
-#             rightEyeCenterY = cv2.cv.Round((rightEye[1] + faceRect[3])/2.0)
-            radius = 6
-            cv2.circle(src, (rightEyeCenterX, rightEyeCenterY), radius, (200,200,0)) # Check circle for python
+        
+        if mPaintEyeCircle:
+            eyeColor = mEyeCircleColor
+            
+            if leftEye[0] >= 0:
+                myPrint (leftEye)
+                leftEyeCenterX = cv2.cv.Round(currFaceRect[0]+currLeftEye[0])
+                leftEyeCenterY = cv2.cv.Round(currFaceRect[1]+currLeftEye[1] + 9)
+    #             leftEyeCenterX = cv2.cv.Round((leftEye[0] + faceRect[2])/2.0)
+    #             leftEyeCenterY = cv2.cv.Round((leftEye[1] + faceRect[3])/2.0)
+                radius = 6
+                cv2.circle(src, (leftEyeCenterX, leftEyeCenterY), radius, eyeColor) # Check circle for python
+            if rightEye[0] >= 0:
+                rightEyeCenterX = cv2.cv.Round(currFaceRect[0]+currRightEye[0])
+                rightEyeCenterY = cv2.cv.Round(currFaceRect[1]+currRightEye[1] + 9)
+    #             rightEyeCenterX = cv2.cv.Round((rightEye[0] + faceRect[2])/2.0)
+    #             rightEyeCenterY = cv2.cv.Round((rightEye[1] + faceRect[3])/2.0)
+                radius = 6
+                cv2.circle(src, (rightEyeCenterX, rightEyeCenterY), radius, eyeColor) # Check circle for python
+        
+        prevFaceRect = currFaceRect
+        prevLeftEye = currLeftEye
+        prevRightEye = currRightEye
             
         if mMode == MODE.DETECTION:
             # Don't do anything special
@@ -188,22 +244,25 @@ def doStuff(src, faceCascade, eyeCascade1, eyeCascade2, oldPreprocessedFace):
                 if oldPreprocessedFace is not None:
                     imageDiff = getSimilarity(preprocessedFace, oldPreprocessedFace)
                 
-                myPrint("Image Diff = {}".format(imageDiff), True)
+                myPrint("Image Diff = {}".format(imageDiff))
                 # Also record when it happened 
                 currentTime = time.time()
                 timeDiff = currentTime - mTime
                 
                 #Only process the face if it is noticeably different from the previous frame and there has been a noticeable time gap
-                print timeDiff
+#                 print timeDiff
                 if (imageDiff > CHANGE_IN_IMAGE_FOR_COLLECTION or timeDiff > CHANGE_IN_SECONDS_FOR_COLLECTION):
                     # Also add the mirror image to the training set, so we hace more training data, as well as to deal with faces looking to the left or to the right
                     print "Added new pic"
                     mirroredFace = cv2.flip(preprocessedFace, 1)
                     
-                    preprocessedFaces.append(preprocessedFace)
-                    preprocessedFaces.append(mirroredFace)
-                    faceLabels.append(mSelectedPerson)
-                    faceLabels.append(mSelectedPerson)
+                    currentProcessedFaces.append(preprocessedFace)
+                    currentProcessedFaces.append(mirroredFace)
+                    newLabel = mSelectedPerson+getNextLabelNumber(nameTranslations)
+                    nameTranslations.update({newLabel: "Unknown"})
+                    faceLabels.append(mSelectedPerson + getNextLabelNumber(nameTranslations))
+                    faceLabels.append(mSelectedPerson + getNextLabelNumber(nameTranslations))
+                    
                     
                     # Keep a reference to the latest face of each person
                     if mSelectedPerson >= 0 and len(mLatestFaces) > 0:
@@ -215,7 +274,7 @@ def doStuff(src, faceCascade, eyeCascade1, eyeCascade2, oldPreprocessedFace):
                     print "Saved face {0} for person {1} ".format(len(preprocessedFaces) / 2, str(mSelectedPerson))
                     
                     # Make a white flash on the face, so the user knows a photo has been taken
-                    displayedFaceRegion = src[faceRect[1]:faceRect[1] + faceRect[3], faceRect[0]:faceRect[0] + faceRect[2]]
+                    displayedFaceRegion = src[currFaceRect[1]:currFaceRect[1] + currFaceRect[3], currFaceRect[0]:currFaceRect[0] + currFaceRect[2]]
                     displayedFaceRegion[np.where(True)] = [0,255,255]
 #                     displayedFaceRegion += cv2.cv.CV_RGB(90,90,90)
                     
@@ -233,7 +292,7 @@ def doStuff(src, faceCascade, eyeCascade1, eyeCascade2, oldPreprocessedFace):
             if facerecAlgorithm == "Fisherfaces":
                 if mNumPersons < 2 or mNumPersons == 2 and mLatestFaces[1] < 0:
                     print "Warning: Fisherfaces needs at least 2 people, otherwise there is nothing to differentiate! Collect more data."
-                    haveEnoughData = False
+                    haveEnoughData = False 
             
             if mNumPersons < 1 or len(preprocessedFaces) <= 0 or len(preprocessedFaces) != len(faceLabels):
                 print "Warning: Need some training data before it can be learnt! Collect more data."
@@ -241,7 +300,7 @@ def doStuff(src, faceCascade, eyeCascade1, eyeCascade2, oldPreprocessedFace):
             
             if haveEnoughData:
                 tempTime = time.time()
-                model = learnCollectedFaces(preprocessedFaces, faceLabels, facerecAlgorithm)
+                model = learnCollectedFaces(preprocessedFaces, faceLabels, facerecAlgorithm, model)
                 mTrainingTime = time.time() - tempTime
                 print mTrainingTime
                 
@@ -253,7 +312,8 @@ def doStuff(src, faceCascade, eyeCascade1, eyeCascade2, oldPreprocessedFace):
             else:
                 mMode = MODE.COLLECT_FACES
         elif mMode == MODE.RECOGNITION:
-            if gotFaceAndEyes and len(preprocessedFaces) > 0 and len(preprocessedFaces) == len(faceLabels):
+#             if gotFaceAndEyes and len(preprocessedFaces) > 0 and len(preprocessedFaces) == len(faceLabels):
+            if model is not None:
                 reconstructedFace = reconstructFace(model, preprocessedFace)
                 if mDebug :
                     if len(reconstructedFace) > 0:
@@ -290,28 +350,30 @@ def doStuff(src, faceCascade, eyeCascade1, eyeCascade2, oldPreprocessedFace):
                 
                 cv2.rectangle(src, ptTopLeft, ptBottomRight, cv2.cv.CV_RGB(200,200,200), 1, cv2.CV_AA)
                                 
-                textSize = cv2.getTextSize(outStr,cv2.FONT_HERSHEY_DUPLEX,1,1)
+                textSize = cv2.getTextSize(outStr, cv2.FONT_HERSHEY_DUPLEX, 1.0, 2)
                 
                 yOffset = 2
-                textX = faceRect[0] + faceRect[2] - textSize[0][0] 
-                textY = faceRect[1] + faceRect[3] - yOffset
+                textX = currFaceRect[0]  
+                textY = currFaceRect[1] + textSize[0][1] + yOffset
                 
-                vertex = (faceRect[0] + faceRect[2], faceRect[1] + faceRect[3])
+                vertex = (currFaceRect[0] + textSize[0][0] , currFaceRect[1] + textSize[0][1] + yOffset + 4 )
                 
-                cv2.rectangle(src, (textX, textY - textSize[0][1] - 1), vertex, cv2.cv.CV_RGB(0,0,0), cv2.cv.CV_FILLED, cv2.CV_AA)
-                cv2.putText(src,"{}".format(outStr), (textX, textY), cv2.FONT_HERSHEY_DUPLEX, 1, (255,255,255), 1, bottomLeftOrigin=False)
-        
+                cv2.rectangle(src, (textX, textY - textSize[0][1] ), vertex, mFaceFrameColor, cv2.cv.CV_FILLED, cv2.CV_AA)
+                cv2.putText(src,"{}".format(outStr), (textX, textY), cv2.FONT_HERSHEY_DUPLEX, 1.0, (255,255,255), 2, bottomLeftOrigin=False)
+#                 print identity
+#                 print nameTranslations
                 
                 cv2.imshow('Video',src)
+                
 #                 cv2.waitKey(0)
 #                 cv2.destroyAllWindows()
         elif mMode == MODE.DELETE_ALL:
-            mSelectedPerson = 0
+            mSelectedPerson = 1
             mNumPersons = 0
             mLatestFaces = []
             preprocessedFaces = []
             faceLabels = []
-            oldPreprocessedFace = np.array()
+            oldPreprocessedFace = None
             mMode = MODE.DETECTION
         else:
             print "ERROR: Invalid run mode {}".format(mMode)
@@ -320,33 +382,36 @@ def doStuff(src, faceCascade, eyeCascade1, eyeCascade2, oldPreprocessedFace):
     return None
 
 def collectAndDetectFaces(faceCascade, eyeCascade1, eyeCascade2):
-    pic, label = csv.getPhotoAndLabel('/home/daniel/Desktop/Pics/Training/data.csv', )
-    global mMode,mDebug, preprocessLeftAndRightSeparately, preprocessedFaces, faceLabels, mNumPersons
+    global mMode,mDebug, preprocessLeftAndRightSeparately, preprocessedFaces, faceLabels, mNumPersons, nameTranslations, mPaintEyeCircle, mPaintFaceFrame, mFaceFrameColor, mEyeCircleColor
+    pic, label, nameTranslations = csv.getPhotoAndLabel(imgFolderPath + 'data.csv')
     for i in range(len(pic)):
         myPrint (pic[i])
+#         print pic[i]
         img = cv2.imread(pic[i])
         
         preprocessedFace, faceRect, leftEye, rightEye, searchedLeftEye, searchedRightEye = getPreprocessedFace(img, faceWidth, faceCascade, eyeCascade1, eyeCascade2, preprocessLeftAndRightSeparately)
         
         if preprocessedFace is not None and len(preprocessedFace) > 0:
-            cv2.rectangle(img, (faceRect[0], faceRect[1]), (faceRect[0] + faceRect[2], faceRect[1] + faceRect[3]), (0,255,255), 2, cv2.cv.CV_AA) # Check faceRect data
+            if mPaintFaceFrame:
+                cv2.rectangle(img, (faceRect[0], faceRect[1]), (faceRect[0] + faceRect[2], faceRect[1] + faceRect[3]), mFaceFrameColor, 2, cv2.cv.CV_AA) # Check faceRect data
             myPrint(preprocessedFace, False)
-        
-            eyeColor = cv2.cv.CV_RGB(0,255,255)
-            '''
-            -------------------------------------------------------------------
-            '''
-            radius = 6
-
-            if leftEye is not None and leftEye[0] >= 0:
-                myPrint (leftEye)
-                leftEyeCenterX = cv2.cv.Round(faceRect[0]+leftEye[0])
-                leftEyeCenterY = cv2.cv.Round(faceRect[1]+leftEye[1] + 9)
-                cv2.circle(img, (leftEyeCenterX, leftEyeCenterY), radius, (200,200,0)) # Check circle for python
-            if rightEye is not None and  rightEye[0] >= 0:
-                rightEyeCenterX = cv2.cv.Round(faceRect[0]+rightEye[0])
-                rightEyeCenterY = cv2.cv.Round(faceRect[1]+rightEye[1] + 9)
-                cv2.circle(img, (rightEyeCenterX, rightEyeCenterY), radius, (200,200,0)) # Check circle for python
+            
+            if mPaintEyeCircle:
+                eyeColor = mEyeCircleColor
+                '''
+                -------------------------------------------------------------------
+                '''
+                radius = 6
+    
+                if leftEye is not None and leftEye[0] >= 0:
+                    myPrint (leftEye)
+                    leftEyeCenterX = cv2.cv.Round(faceRect[0]+leftEye[0])
+                    leftEyeCenterY = cv2.cv.Round(faceRect[1]+leftEye[1] + 9)
+                    cv2.circle(img, (leftEyeCenterX, leftEyeCenterY), radius, mEyeCircleColor) # Check circle for python
+                if rightEye is not None and  rightEye[0] >= 0:
+                    rightEyeCenterX = cv2.cv.Round(faceRect[0]+rightEye[0])
+                    rightEyeCenterY = cv2.cv.Round(faceRect[1]+rightEye[1] + 9)
+                    cv2.circle(img, (rightEyeCenterX, rightEyeCenterY), radius, mEyeCircleColor) # Check circle for python
                 
 #             cv2.imshow('{} - {}'.format(label[i], i),img)
             mirroredFace = cv2.flip(preprocessedFace, 1)
@@ -361,7 +426,7 @@ def collectAndDetectFaces(faceCascade, eyeCascade1, eyeCascade2):
         
 #     cv2.waitKey(0)
 #     cv2.destroyAllWindows()
-    myPrint("preprocessedFaces = {}".format(len(preprocessedFaces)), True)
+    myPrint("preprocessedFaces = {}".format(len(preprocessedFaces)))
     mNumPersons = len(np.unique(faceLabels))
     myPrint(faceLabels)
 
@@ -380,7 +445,7 @@ def trainNetwork():
         
     if haveEnoughData:
         tempTime = time.time()
-        model = learnCollectedFaces(preprocessedFaces, faceLabels, facerecAlgorithm)
+        model = learnCollectedFaces(preprocessedFaces, faceLabels, facerecAlgorithm, model)
         mTrainingTime = time.time() - tempTime
         print mTrainingTime
         return model
@@ -392,9 +457,9 @@ def trainNetwork():
     pass
 
 def getPersonName(n):
-    for id, name in nameArr:
-        if n == id:
-            return name
+    global nameTranslations
+    
+    return nameTranslations.get(n)
 
 def recognize(src, model, faceCascade, eyeCascade1, eyeCascade2):
     img = cv2.imread(src)
@@ -414,7 +479,7 @@ def recognize(src, model, faceCascade, eyeCascade1, eyeCascade2):
         
         if(similarity < UNKNOWN_PERSON_THRESHOLD):
             # Identify who the person is in the preprocessed face image.
-            print "IDENTIFY"
+#             print "IDENTIFY"
             identity = model.predict(preprocessedFace)
             outStr = getPersonName(identity[0]) 
         else:
@@ -429,18 +494,18 @@ def recognize(src, model, faceCascade, eyeCascade1, eyeCascade2):
         ptTopLeft = (cx - 15, BORDER)
         # Draw a gray line showing the threshold for an "unknown" person
         ptThreshold = (ptTopLeft[0], ptBottomRight[1] - cv2.cv.Round((1.0 - UNKNOWN_PERSON_THRESHOLD) * faceHeight))
-        print ptThreshold, ptBottomRight[0]
+#         print ptThreshold, ptBottomRight[0]
         cv2.rectangle(img, ptThreshold, (ptBottomRight[0], ptThreshold[1]), cv2.cv.CV_RGB(200,200,200), 1, cv2.CV_AA)
         # Crop the confidence rating between 0.0 to 1.0, to show in the bar.
         confidenceRatio =  1.0 - min(max(similarity, 0.0), 1.0)
         ptConfdence = (ptTopLeft[0], cv2.cv.Round(ptBottomRight[1] - confidenceRatio * faceHeight))
-        print ptBottomRight, ptConfdence
+#         print ptBottomRight, ptConfdence
         # Show the light-blue confidence bar
         cv2.rectangle(img, ptConfdence, ptBottomRight, cv2.cv.CV_RGB(0,255,255), cv2.cv.CV_FILLED, cv2.CV_AA)
         # Show the gray border of the bar
         cv2.rectangle(img, ptTopLeft, ptBottomRight, cv2.cv.CV_RGB(200,200,200), 1, cv2.CV_AA)
         
-        textSize = cv2.getTextSize(outStr,cv2.FONT_HERSHEY_DUPLEX,1,1)
+        textSize = cv2.getTextSize(outStr,cv2.FONT_HERSHEY_DUPLEX,1.0,2)
         
         yOffset = 2
         textX = faceRect[0] + faceRect[2] - textSize[0][0] 
@@ -449,32 +514,51 @@ def recognize(src, model, faceCascade, eyeCascade1, eyeCascade2):
         vertex = (faceRect[0] + faceRect[2], faceRect[1] + faceRect[3])
         
         cv2.rectangle(img, (textX, textY - textSize[0][1] - 1), vertex, cv2.cv.CV_RGB(0,0,0), cv2.cv.CV_FILLED, cv2.CV_AA)
-        cv2.putText(img,"{}".format(outStr), (textX, textY), cv2.FONT_HERSHEY_DUPLEX, 1, (255,255,255), 1, bottomLeftOrigin=False)
+        cv2.putText(img,"{}".format(outStr), (textX, textY), cv2.FONT_HERSHEY_DUPLEX, 1.0, mFaceFrameColor, 2, bottomLeftOrigin=False)
         cv2.imshow('recognized face', img)
-        
+        cv2.moveWindow('recognizedFace', 0,0)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
+
+
 def storeCollectedFaces():
-    global preprocessedFaces, faceLabels
-    myPath = "/home/daniel/Desktop/Pics/Training/"
+    global preprocessedFaces, faceLabels, imgFolderPath, model,facerecAlgorithm
+    if model is None:
+        model = learnCollectedFaces(preprocessedFaces, faceLabels, facerecAlgorithm, model)
+    
+#     decide where the faces will go to
+#     referenceMat = []
+#     for label in (np.unique(faceLabels)):
+#         model.predict(preprocessedFaces[])
+#         continue
+    myPath = imgFolderPath 
     for i in xrange(len(preprocessedFaces)):
-        person = faceLabels[i]
+        person = "{}.{}".format(faceLabels[i], nameTranslations.get(faceLabels[i]))
         img = preprocessedFaces[i] 
-        imgName = (img)
-        cv2.imwrite("{}{}/{}".format(myPath, person, imgName ), img)
+        imgName = time.time()
+        newFolder = createNewFolder(myPath, faceLabels[i], nameTranslations.get(faceLabels[i]))
+        pathname = "{}{}/pp/{}({}).jpg".format(myPath, person, imgName, i)
+        print pathname
+#         cv2.cv.SaveImage(pathname, img)
+        cv2.imwrite(pathname, img)
     
     print("Saved {} images".format(len(faceLabels)))
 
 def recognizeAndTrain(src, faceCascade, eyeCascade1, eyeCascade2):
     
     oldPreprocessedFace = None
-    oldTime = 0
+
     # Start in detection mode
-    global mMode, mSelectedPerson, mNumPersons, model
+    global mMode, mSelectedPerson, mNumPersons, model, modelPath, facerecAlgorithm, mReadFromFiles, mPaintEyeCircle, mPaintFaceFrame, camFrame
+    
     mMode = MODE.DETECTION
     cam = cv2.VideoCapture(0)
     mSelectedPerson = 0
+    centered = False
+    
+#     pool = ThreadPool(processes=1)
+#     async_result = pool.apply(PopupWindow.askSaveAuto, (mReadFromFiles, model is not None))
     
     if runType == TYPE.PICTURE:
         # Run once for pictures
@@ -484,111 +568,127 @@ def recognizeAndTrain(src, faceCascade, eyeCascade1, eyeCascade2):
         recognize('/home/daniel/Desktop/Pics/Sample/5/2016-10-03-180756.jpg', model, faceCascade, eyeCascade1, eyeCascade2)
 #         recognize('/home/daniel/Desktop/Pics/Training/2/Felicia2.jpg', model, faceCascade, eyeCascade1, eyeCascade2)
 #         recognize('/home/daniel/Documents/Untitled.jpeg', model, faceCascade, eyeCascade1, eyeCascade2)
-        # get preprocessed faces
-        # store in global variables
-        # train, recognize
-#         doStuff(src, faceCascade, eyeCascade1, eyeCascade2)
     else:
         # Run forever until user hits esc in case it is video 
         while True:
             ret, frame = cam.read()
+            if camFrame is None:
+                camFrame = (frame.shape[1], frame.shape[0])
+            
 #             collectAndDetectFaces(faceCascade, eyeCascade1, eyeCascade2)
 #             model = trainNetwork()
             oldPreprocessedFace = doStuff(frame, faceCascade, eyeCascade1, eyeCascade2, oldPreprocessedFace)
 #             print oldPreprocessedFace
             
-            cv2.putText(frame,"collected faces 0 {} ".format(faceLabels.count(0)), (2, 30), cv2.FONT_HERSHEY_DUPLEX, 1, (255,255,255), 1, bottomLeftOrigin=False)
-            cv2.putText(frame,"collected faces 1 {} ".format(faceLabels.count(1)), (2, 60), cv2.FONT_HERSHEY_DUPLEX, 1, (255,255,255), 1, bottomLeftOrigin=False)
+            counter=1 
+            
+            if mMode != MODE.RECOGNITION:
+                for num in  np.unique(faceLabels):
+                    outStr = "collected faces for person {}: {} ".format(num, faceLabels.count(num))
+                    textSize = cv2.getTextSize(outStr, cv2.FONT_HERSHEY_PLAIN, 1, 1)
+                    cv2.putText(frame,outStr, (2 , (textSize[0][1]+4) * counter), cv2.FONT_HERSHEY_PLAIN, 1, (255,0,0), 1, bottomLeftOrigin=False)
+                    counter += 1
+
             cv2.imshow('Video', frame)
+            
+            if not centered :
+                    cv2.moveWindow('Video', screenWidth /3, 0)
+                    centered = True
+                    
             key = cv2.waitKey(1)
+            
+            # Quit
             if key & 0xFF == ord('q'):
                 cam.release()
                 cv2.destroyAllWindows()
                 break
+            
+            # Standby mode, only detecting face
             if key & 0xFF == ord('d'):
                 myPrint("Changed MODE to Detection", True)
                 mMode = MODE.DETECTION
+            
+            # Collect faces 
             if key & 0xFF == ord('c'):
                 myPrint("Changed MODE to Collect Faces", True)
                 mMode = MODE.COLLECT_FACES
+                
+            # Run Training Mode
             if key & 0xFF == ord('t'):
                 myPrint("Changed MODE to Training", True)
                 mNumPersons = len(np.unique(faceLabels))
                 mMode = MODE.TRAINING
+            
+            # Run Recognition Mode
             if key & 0xFF == ord('r'):
                 myPrint("Changed MODE to Recognition", True)
                 mMode = MODE.RECOGNITION
+            
+            # Delete in memory data (preprocessed faces, labels, etc) 
             if key & 0xFF == ord('x'):
                 myPrint("DELETE ALL", True)
-                mMode = MODE.RECOGNITION    
+                mMode = MODE.DELETE_ALL
+            
+            # Train from existing photo files    
             if key & 0xFF == ord('f'):
                 myPrint("Train from Files", True)
+                mReadFromFiles = True
                 collectAndDetectFaces(faceCascade, eyeCascade1, eyeCascade2)
                 model = trainNetwork()
                 mMode = MODE.RECOGNITION    
+            # Save collected faces
             if key & 0xFF == ord('s'):
+                
+#                 print async_result
+#                 return_val = async_result.get()
+#                 print return_val
+#                 thread = Thread(target=PopupWindow.askSaveAuto(mReadFromFiles, model is not None))
+#                 thread.start()
+#                 thread.join()
+                
                 print("Storing collected faces")
                 storeCollectedFaces()
                 mMode = MODE.DETECTION
-            if key & 0xFF == ord('z'):
-                if mSelectedPerson == 1:
-                    mSelectedPerson = 0
+            
+            # Store model data in a file
+            if key & 0xFF == ord('m'):
+                if model is not None:
+                    print("Storing training model data.")
+                    model.save(modelPath)
                 else:
-                    mSelectedPerson = 1
+                    print("There is no trained model data to save.")
+            
+            # Change current person       
+            if key & 0xFF >= ord('1') and key & 0xFF <= ord('9') :
+                mSelectedPerson = int(chr(key & 0xFF))
                 myPrint("Changed person to {}".format(mSelectedPerson), True)
+            
+            # Toggle Paint eye cirlce
+            if key & 0xFF == ord('e'):
+                mPaintEyeCircle = not mPaintEyeCircle
+            
+            # Toggle Paint face frame
+            if key & 0xFF == ord('w'):
+                mPaintFaceFrame = not mPaintFaceFrame
+            
+            # Load from existing Model file
+            if key & 0xFF == ord('l'):
+                try:
+                    if model is None:
+                        print("Loading training model data.")
+                        if facerecAlgorithm == "Fisherfaces":
+                            model = cv2.createFisherFaceRecognizer()
+                        elif facerecAlgorithm == "Eigenfaces":
+                            model = cv2.createEigenFaceRecognizer()
+                        else:
+                            model = cv2.createLBPHFaceRecognizer() 
+                        
+                    
+                    model.load(modelPath)
+                except Exception as e:
+                    print("There is no model data to load or an error occured while loading.")
+                    
+            
         
 run()
-
-# cam = cv2.VideoCapture(0)
-# while True:
-#     ret, frame = cam.read()
-#     cv2.imshow('bla', frame)
-#     
-#     if cv2.waitKey(1) & 0xFF == ord('q'):
-#         break
-
-# cam.release()
-# cv2.destroyAllWindows()
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-            
-    
-    

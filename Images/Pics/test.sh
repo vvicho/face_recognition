@@ -1,0 +1,23 @@
+#define 
+filename="data.csv"
+
+rm "$filename"
+
+for d in */ ; do
+  # Get the name of the person with the slash character trimmed
+  person=$(echo $d | tr -d '/')
+
+  # Go into that persons folder
+  cd "$d"
+  bla=''
+
+  # Get every photo in the folder
+  for entry in * ; do
+     line="$PWD/$entry,$person"
+     echo "$line" >> ../$filename
+  done
+
+  # Go back to the main folder  
+  cd ..
+
+done
