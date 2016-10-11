@@ -10,9 +10,11 @@ import utils.Utilities as uti
 import utils
 import time
 from math import atan2, pi
+from cv2 import imshow
 
 drawFaceRectangles = True
 
+showImg = True
 mDebug = False
 
 def myPrint(obj, flag=False):
@@ -116,6 +118,7 @@ Input is shrunk for faster detection
 Returns singe largest object
 '''
 def detectLargestObject(img, cascade, scaleWidth, details):
+    global showImg
     #Only search 1 object
     flags = cv2.CASCADE_FIND_BIGGEST_OBJECT
     
@@ -130,6 +133,10 @@ def detectLargestObject(img, cascade, scaleWidth, details):
     objects = detectObjectsCustom(img, cascade, scaleWidth, flags, minFeatureSize, searchScaleFactor, minNeighbors, True, "")
     if (objects is not None) and len(objects) >= 1:
         largestObject = objects[0]
+#         if showImg:
+#             cv2.imshow("Largest Object", img[largestObject[1]:largestObject[3],largestObject[0]:largestObject[2]])
+#         cv2.waitKey(0)
+#         cv2.destroyAllWindows()
     else:
         largestObject = None
         myPrint("No object found in " + details)

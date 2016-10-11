@@ -36,6 +36,7 @@ def myPrint(obj, flag=False):
 '''
 def detectBothEyes(face, eye_cascade1, eye_cascade2, searched_left_eye, searched_right_eye):
     
+    global showImg, mDebug
     leftEye = rightEye = None
     
     # For default eye.xml or eyeglasses.xml: Finds both eyes in roughly 40% of detected faces, but does not detect closed eyes
@@ -103,6 +104,9 @@ def detectBothEyes(face, eye_cascade1, eye_cascade2, searched_left_eye, searched
     else:
         rightEye = (-1, -1)
     
+#     if showImg:
+#         cv2.waitKey(0)
+#         cv2.destroyAllWindows()
  
     return leftEye, rightEye, searched_left_eye, searched_right_eye
     
