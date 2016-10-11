@@ -27,7 +27,16 @@ class TYPE:
     VIDEO, PICTURE = range(2)
 
 class MODE:
-    STARTUP, DETECTION, COLLECT_FACES, TRAINING, RECOGNITION, DELETE_ALL, END = range(7)
+    STARTUP, DETECTION, COLLECT_FACES, TRAINING, RECOGNITION, TEST, DELETE_ALL, END = range(8)
+
+runType = TYPE.VIDEO
+
+imgFolderPath = "/home/daniel/workspace/Project/Images/Pics/Training/"
+testFolderPath = "/home/daniel/workspace/Project/Images/Pics/Test/"
+# imgFolderPath = "/home/daniel/workspace/Project/Images/yalefaces/jpeg/Training/"
+# imgFolderPath = "/home/daniel/workspace/Project/Images/lfw/"
+# testFolderPath = "/home/daniel/workspace/Project/Images/lfw/George_W_Bush/"
+# testFolderPath = "/home/daniel/workspace/Project/Images/yalefaces/jpeg/Test/"
 
 # Cascade file locations
 haarCascadesPath = '/home/daniel/opencv/data/haarcascades/'
@@ -55,6 +64,8 @@ currentProcessedFaces = []
 currentRecognized = []
 faceLabels = []
 nameTranslations = {}
+testPreProcessedFaces = []
+testFaceLables = []
 
 # Preprocess left & right sides of the face separately in case there is stronger light in one side.
 preprocessLeftAndRightSeparately = True
@@ -70,6 +81,7 @@ mMode = MODE.COLLECT_FACES
 mNumPersons = 0
 mLatestFaces = []
 mDebug = False
+mShowImg = True
 mSelectedPerson = -1
 mStoreCollectedFaces = False
 model = None
@@ -87,12 +99,6 @@ mPaintEyeCircle = True
 prevFaceRect = None
 prevLeftEye = None
 prevRightEye = None
-
-
-
-runType = TYPE.VIDEO
-
-imgFolderPath = "/home/daniel/workspace/Project/Images/Pics/Test/"
 
 # Screen and frame details
 root = Tkinter.Tk()
@@ -168,7 +174,7 @@ def initWebcam():
 def doStuff(src, faceCascade, eyeCascade1, eyeCascade2, oldPreprocessedFace):
     # Run the face recognition system on the src image. 
     # It will draw some things onto the given image, so make sure it is not read-only memory!
-    global mMode, mDebug, preprocessedFaces, faceLabels, model, mNumPersons, mLatestFaces, mSelectedPerson, mTrainingTime, mFaceFrameColor, mPaintEyeCircle, mPaintFaceFrame, mEyeCircleColor, prevFaceRect, prevLeftEye, prevRightEye
+    global mMode, mDebug, preprocessedFaces, faceLabels, model, mNumPersons, mLatestFaces, mSelectedPerson, mTrainingTime, mFaceFrameColor, mPaintEyeCircle, mPaintFaceFrame, mEyeCircleColor, prevFaceRect, prevLeftEye, prevRightEye, testPreProcessedFaces, mShowImg
     identity = -1
     mTime = time.time()
     # Find face and preprocess it to have a standard size, contrast and brightness
@@ -258,10 +264,12 @@ def doStuff(src, faceCascade, eyeCascade1, eyeCascade2, oldPreprocessedFace):
                     
                     currentProcessedFaces.append(preprocessedFace)
                     currentProcessedFaces.append(mirroredFace)
-                    newLabel = mSelectedPerson+getNextLabelNumber(nameTranslations)
-                    nameTranslations.update({newLabel: "Unknown"})
-                    faceLabels.append(mSelectedPerson + getNextLabelNumber(nameTranslations))
-                    faceLabels.append(mSelectedPerson + getNextLabelNumber(nameTranslations))
+#                     newLabel = mSelectedPerson+getNextLabelNumber(nameTranslations)
+#                     nameTranslations.update({newLabel: "Unknown"})
+#                     faceLabels.append(mSelectedPerson + getNextLabelNumber(nameTranslations))
+#                     faceLabels.append(mSelectedPerson + getNextLabelNumber(nameTranslations))
+                    faceLabels.append(mSelectedPerson)
+                    faceLabels.append(mSelectedPerson)
                     
                     
                     # Keep a reference to the latest face of each person
@@ -315,7 +323,7 @@ def doStuff(src, faceCascade, eyeCascade1, eyeCascade2, oldPreprocessedFace):
 #             if gotFaceAndEyes and len(preprocessedFaces) > 0 and len(preprocessedFaces) == len(faceLabels):
             if model is not None:
                 reconstructedFace = reconstructFace(model, preprocessedFace)
-                if mDebug :
+                if mShowImg :
                     if len(reconstructedFace) > 0:
                         cv2.imshow("reconstructedFace", reconstructedFace)
                         
@@ -375,21 +383,25 @@ def doStuff(src, faceCascade, eyeCascade1, eyeCascade2, oldPreprocessedFace):
             faceLabels = []
             oldPreprocessedFace = None
             mMode = MODE.DETECTION
+            testPreProcessedFaces = []
         else:
             print "ERROR: Invalid run mode {}".format(mMode)
             sys.exit()
             
     return None
 
-def collectAndDetectFaces(faceCascade, eyeCascade1, eyeCascade2):
-    global mMode,mDebug, preprocessLeftAndRightSeparately, preprocessedFaces, faceLabels, mNumPersons, nameTranslations, mPaintEyeCircle, mPaintFaceFrame, mFaceFrameColor, mEyeCircleColor
-    pic, label, nameTranslations = csv.getPhotoAndLabel(imgFolderPath + 'data.csv')
+def collectAndDetectFaces(folder, faceCascade, eyeCascade1, eyeCascade2, mode):
+    global mMode,mDebug, preprocessLeftAndRightSeparately, preprocessedFaces, faceLabels, mNumPersons, nameTranslations, mPaintEyeCircle, mPaintFaceFrame, mFaceFrameColor, mEyeCircleColor, testPreProcessedFaces
+    pic, label, nameTranslations = csv.getPhotoAndLabel(folder)
     for i in range(len(pic)):
+        if i % 500 == 0:
+            print "processed {} images".format(i)
         myPrint (pic[i])
 #         print pic[i]
         img = cv2.imread(pic[i])
         
         preprocessedFace, faceRect, leftEye, rightEye, searchedLeftEye, searchedRightEye = getPreprocessedFace(img, faceWidth, faceCascade, eyeCascade1, eyeCascade2, preprocessLeftAndRightSeparately)
+#         print preprocessedFace
         
         if preprocessedFace is not None and len(preprocessedFace) > 0:
             if mPaintFaceFrame:
@@ -414,11 +426,17 @@ def collectAndDetectFaces(faceCascade, eyeCascade1, eyeCascade2):
                     cv2.circle(img, (rightEyeCenterX, rightEyeCenterY), radius, mEyeCircleColor) # Check circle for python
                 
 #             cv2.imshow('{} - {}'.format(label[i], i),img)
-            mirroredFace = cv2.flip(preprocessedFace, 1)
-            preprocessedFaces.append(preprocessedFace)
-            preprocessedFaces.append(mirroredFace)
-            faceLabels.append(label[i])
-            faceLabels.append(label[i])
+            if mode == MODE.TEST:
+#                 print "adding preprocessed test"
+                testPreProcessedFaces.append(preprocessedFace)
+                testFaceLables.append(label[i])
+            else:
+#                 print "adding preprocessed training"
+                mirroredFace = cv2.flip(preprocessedFace, 1)
+                preprocessedFaces.append(preprocessedFace)
+                preprocessedFaces.append(mirroredFace)
+                faceLabels.append(label[i])
+                faceLabels.append(label[i])
         '''
         -------------------------------------------------------------------
         '''    
@@ -447,7 +465,7 @@ def trainNetwork():
         tempTime = time.time()
         model = learnCollectedFaces(preprocessedFaces, faceLabels, facerecAlgorithm, model)
         mTrainingTime = time.time() - tempTime
-        print mTrainingTime
+        print "Training time with {} algorithm - {}".format(facerecAlgorithm, mTrainingTime)
         return model
     
         
@@ -461,10 +479,11 @@ def getPersonName(n):
     
     return nameTranslations.get(n)
 
-def recognize(src, model, faceCascade, eyeCascade1, eyeCascade2):
+def recognize(src, id, model, faceCascade, eyeCascade1, eyeCascade2):
     img = cv2.imread(src)
     preprocessedFace, faceRect, leftEye, rightEye, searchedLeftEye, searchedRightEye = getPreprocessedFace(img, faceWidth, faceCascade, eyeCascade1, eyeCascade2, preprocessLeftAndRightSeparately)
     gotFaceAndEyes = False
+    recognitionSuccess = False
     if faceRect is not None:
         gotFaceAndEyes=True
     if gotFaceAndEyes and len(preprocessedFaces) > 0 and len(preprocessedFaces) == len(faceLabels):
@@ -482,6 +501,8 @@ def recognize(src, model, faceCascade, eyeCascade1, eyeCascade2):
 #             print "IDENTIFY"
             identity = model.predict(preprocessedFace)
             outStr = getPersonName(identity[0]) 
+            if id == identity[0]:
+                recognitionSuccess = True
         else:
             # Since the confidence is low, assume it is an unknown person
             outStr = "Unknown"
@@ -515,10 +536,11 @@ def recognize(src, model, faceCascade, eyeCascade1, eyeCascade2):
         
         cv2.rectangle(img, (textX, textY - textSize[0][1] - 1), vertex, cv2.cv.CV_RGB(0,0,0), cv2.cv.CV_FILLED, cv2.CV_AA)
         cv2.putText(img,"{}".format(outStr), (textX, textY), cv2.FONT_HERSHEY_DUPLEX, 1.0, mFaceFrameColor, 2, bottomLeftOrigin=False)
-        cv2.imshow('recognized face', img)
-        cv2.moveWindow('recognizedFace', 0,0)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+#         cv2.imshow('recognized face', img)
+#         cv2.moveWindow('recognizedFace', 0,0)
+#         cv2.waitKey(0)
+#         cv2.destroyAllWindows()
+        return recognitionSuccess
 
 
 
@@ -539,11 +561,24 @@ def storeCollectedFaces():
         imgName = time.time()
         newFolder = createNewFolder(myPath, faceLabels[i], nameTranslations.get(faceLabels[i]))
         pathname = "{}{}/pp/{}({}).jpg".format(myPath, person, imgName, i)
-        print pathname
+#         print pathname
 #         cv2.cv.SaveImage(pathname, img)
         cv2.imwrite(pathname, img)
     
-    print("Saved {} images".format(len(faceLabels)))
+#     print("Saved {} images".format(len(faceLabels)))
+    
+def recognizeFromTestFolder(folder, faceCascade, eyeCascade1, eyeCascade2):
+    global testPreProcessedFaces, model
+    testPreProcessedFaces, labels, _ = csv.getPhotoAndLabel(folder)
+#     print labels
+#     collectAndDetectFaces(testFolderPath, faceCascade, eyeCascade1, eyeCascade2, MODE.TEST)
+    totalTestPhotos = len(labels)
+    totalRecogSuccess = 0
+    for  i in  xrange(len(testPreProcessedFaces)):
+        if recognize(testPreProcessedFaces[i], labels[i], model, faceCascade, eyeCascade1, eyeCascade2):
+            totalRecogSuccess += 1
+    
+    print "Successful recognitions {}/{}".format(totalRecogSuccess, totalTestPhotos)
 
 def recognizeAndTrain(src, faceCascade, eyeCascade1, eyeCascade2):
     
@@ -554,7 +589,7 @@ def recognizeAndTrain(src, faceCascade, eyeCascade1, eyeCascade2):
     
     mMode = MODE.DETECTION
     cam = cv2.VideoCapture(0)
-    mSelectedPerson = 0
+    mSelectedPerson = 1
     centered = False
     
 #     pool = ThreadPool(processes=1)
@@ -563,9 +598,15 @@ def recognizeAndTrain(src, faceCascade, eyeCascade1, eyeCascade2):
     if runType == TYPE.PICTURE:
         # Run once for pictures
         # read csv file
-        collectAndDetectFaces(faceCascade, eyeCascade1, eyeCascade2)
+        startTime = time.time()
+        collectAndDetectFaces(imgFolderPath,faceCascade, eyeCascade1, eyeCascade2, MODE.TRAINING)
+        print "finished in collecting faces in {} seconds".format(time.time() - startTime)
+        # x is your dataset
+#         indices = np.random.permutation(preprocessedFaces.shape[0])
+#         training_idx, test_idx = indices[:]
+#         preprocess, test = preprocessedFaces[:80,:], preprocessedFaces[80:,:]
         model = trainNetwork()
-        recognize('/home/daniel/Desktop/Pics/Sample/5/2016-10-03-180756.jpg', model, faceCascade, eyeCascade1, eyeCascade2)
+        recognizeFromTestFolder(testFolderPath, faceCascade, eyeCascade1, eyeCascade2)
 #         recognize('/home/daniel/Desktop/Pics/Training/2/Felicia2.jpg', model, faceCascade, eyeCascade1, eyeCascade2)
 #         recognize('/home/daniel/Documents/Untitled.jpeg', model, faceCascade, eyeCascade1, eyeCascade2)
     else:
@@ -633,7 +674,7 @@ def recognizeAndTrain(src, faceCascade, eyeCascade1, eyeCascade2):
             if key & 0xFF == ord('f'):
                 myPrint("Train from Files", True)
                 mReadFromFiles = True
-                collectAndDetectFaces(faceCascade, eyeCascade1, eyeCascade2)
+                collectAndDetectFaces(imgFolderPath, faceCascade, eyeCascade1, eyeCascade2, MODE.TRAINING)
                 model = trainNetwork()
                 mMode = MODE.RECOGNITION    
             # Save collected faces

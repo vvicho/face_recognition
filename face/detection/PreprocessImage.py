@@ -17,7 +17,7 @@ FACE_ELLIPSE_CY = 0.40
 FACE_ELLIPSE_W = 0.50
 FACE_ELLIPSE_H = 0.80
 
-showImg = False
+showImg = True
 
 mDebug = False
 
@@ -310,7 +310,7 @@ def getPreprocessedFace(srcImg, desiredFaceWidth, faceCascade, eyeCascade1, eyeC
                 warped = cv2.equalizeHist(warped)
             else:
                 # Do it separately for the left and right sides of the face
-                equalizeLeftAndRightHalves(warped)
+                warped = equalizeLeftAndRightHalves(warped)
                 
             if showImg: cv2.imshow('equalized', warped)
             myPrint ("equalized")

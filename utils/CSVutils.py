@@ -36,7 +36,7 @@ def updateCSVFile(filePath):
    labelArray - contains the name of the person to which this data belongs to.
 '''
 def getPhotoAndLabel(filename):
-    parsedCsv = readCSV(filename)
+    parsedCsv = readCSV(filename + "data.csv")
     dataArray, labelArray, translationArray = [], [], {}
     for photo, label, name in parsedCsv:
         dataArray += [photo]
@@ -47,12 +47,17 @@ def getPhotoAndLabel(filename):
 
 
 def getNameTranslation(folderPath):
-    translationArray = {}
-    for _, dirs, _ in os.walk(folderPath):
-        for dir in dirs:
-            [number, name] = dir.split('.',1)
-            translationArray.update({int(number): name})
-    return translationArray
+#     translationArray = {}
+#     for _, dirs, _ in os.walk(folderPath):
+#         for dir in dirs:
+#             [number, name] = dir.split('.',1)
+#             translationArray.update({int(number): name})
+    _, _, array = getPhotoAndLabel(folderPath)
+#     print labels
+#     for i in xrange(len(labels)):
+#         if not translationArray.has_key(labels[i]):
+#             translationArray.update({labels[i]: array[i]}) 
+    return array
 
 
 '''
