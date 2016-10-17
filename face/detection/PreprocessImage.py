@@ -17,7 +17,7 @@ FACE_ELLIPSE_CY = 0.40
 FACE_ELLIPSE_W = 0.50
 FACE_ELLIPSE_H = 0.80
 
-showImg = True
+showImg = False
 
 mDebug = False
 

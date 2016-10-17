@@ -60,12 +60,12 @@ BORDER = 8 # Border between the GUI elements to the edge of the image.
 
 # stacks to store the person face and name
 preprocessedFaces = []
-currentProcessedFaces = []
-currentRecognized = []
+# currentProcessedFaces = []
+# currentRecognized = []
 faceLabels = []
 nameTranslations = {}
-testPreProcessedFaces = []
-testFaceLables = []
+# testPreProcessedFaces = []
+# testFaceLables = []
 
 # Preprocess left & right sides of the face separately in case there is stronger light in one side.
 preprocessLeftAndRightSeparately = True
@@ -262,8 +262,8 @@ def doStuff(src, faceCascade, eyeCascade1, eyeCascade2, oldPreprocessedFace):
                     print "Added new pic"
                     mirroredFace = cv2.flip(preprocessedFace, 1)
                     
-                    currentProcessedFaces.append(preprocessedFace)
-                    currentProcessedFaces.append(mirroredFace)
+                    preprocessedFaces.append(preprocessedFace)
+                    preprocessedFaces.append(mirroredFace)
 #                     newLabel = mSelectedPerson+getNextLabelNumber(nameTranslations)
 #                     nameTranslations.update({newLabel: "Unknown"})
 #                     faceLabels.append(mSelectedPerson + getNextLabelNumber(nameTranslations))
@@ -428,8 +428,9 @@ def collectAndDetectFaces(folder, faceCascade, eyeCascade1, eyeCascade2, mode):
 #             cv2.imshow('{} - {}'.format(label[i], i),img)
             if mode == MODE.TEST:
 #                 print "adding preprocessed test"
-                testPreProcessedFaces.append(preprocessedFace)
-                testFaceLables.append(label[i])
+#                 testPreProcessedFaces.append(preprocessedFace)
+#                 testFaceLables.append(label[i])
+                pass
             else:
 #                 print "adding preprocessed training"
                 mirroredFace = cv2.flip(preprocessedFace, 1)
@@ -580,6 +581,17 @@ def recognizeFromTestFolder(folder, faceCascade, eyeCascade1, eyeCascade2):
     
     print "Successful recognitions {}/{}".format(totalRecogSuccess, totalTestPhotos)
 
+def getModeString(mode):
+    if mode == 1:
+        return "Detection"
+    elif mode == 2:
+        return "Face Collection"
+    elif mode == 3:
+        return "Training"
+    elif mode == 4:
+        return "Recognition"
+    
+
 def recognizeAndTrain(src, faceCascade, eyeCascade1, eyeCascade2):
     
     oldPreprocessedFace = None
@@ -613,6 +625,7 @@ def recognizeAndTrain(src, faceCascade, eyeCascade1, eyeCascade2):
         # Run forever until user hits esc in case it is video 
         while True:
             ret, frame = cam.read()
+            
             if camFrame is None:
                 camFrame = (frame.shape[1], frame.shape[0])
             
@@ -621,6 +634,9 @@ def recognizeAndTrain(src, faceCascade, eyeCascade1, eyeCascade2):
             oldPreprocessedFace = doStuff(frame, faceCascade, eyeCascade1, eyeCascade2, oldPreprocessedFace)
 #             print oldPreprocessedFace
             
+            modeStr = "Mode: {}".format(getModeString(mMode))
+            modeTextSize = cv2.getTextSize(modeStr, cv2.FONT_HERSHEY_PLAIN, 2, 2)
+            cv2.putText(frame,modeStr, (2 , camFrame[1] - 4), cv2.FONT_HERSHEY_PLAIN, 2, (255,255,255), 2, bottomLeftOrigin=False)
             counter=1 
             
             if mMode != MODE.RECOGNITION:
@@ -629,7 +645,12 @@ def recognizeAndTrain(src, faceCascade, eyeCascade1, eyeCascade2):
                     textSize = cv2.getTextSize(outStr, cv2.FONT_HERSHEY_PLAIN, 1, 1)
                     cv2.putText(frame,outStr, (2 , (textSize[0][1]+4) * counter), cv2.FONT_HERSHEY_PLAIN, 1, (255,0,0), 1, bottomLeftOrigin=False)
                     counter += 1
-
+            
+            # Print current person
+            collectionStr = "Current Selected person: {}".format(getPersonName(mSelectedPerson))
+            collectionTextSize = cv2.getTextSize(collectionStr, cv2.FONT_HERSHEY_PLAIN, 1, 1)
+            cv2.putText(frame, collectionStr,(camFrame[0] - collectionTextSize[0][0] - 4, collectionTextSize[0][1] + 4), cv2.FONT_HERSHEY_PLAIN, 1, (255,0,0), 1, bottomLeftOrigin=False)
+            
             cv2.imshow('Video', frame)
             
             if not centered :

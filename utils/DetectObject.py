@@ -14,7 +14,7 @@ from cv2 import imshow
 
 drawFaceRectangles = True
 
-showImg = True
+showImg = False
 mDebug = False
 
 def myPrint(obj, flag=False):
